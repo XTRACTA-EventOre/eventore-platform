@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand",
-    "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "dev": "node api.js && nodemon src/server.js",
+    "start": "node api.js && node src/server.js"
   },
   "keywords": [],
   "author": "",
