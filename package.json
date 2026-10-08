@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand",
-    "dev": "nodemon src/server.js",
-    "start": "node src/server.js"
+    "dev": "node api.js && nodemon src/server.js",
+    "start": "node api.js && node src/server.js"
   },
   "keywords": [],
   "author": "",
@@ -20,7 +20,9 @@
   },
   "devDependencies": {
     "jest": "^30.5.2",
+    "jsqr": "^1.4.0",
     "nodemon": "^3.1.14",
+    "pngjs": "^7.0.0",
     "supertest": "^7.3.1"
   }
 }
