@@ -66,8 +66,6 @@ web_modules/
 .yarn-integrity
 
 # dotenv environment variable files
-.env
-.env.*
 !.env.example
 
 # parcel-bundler cache (https://parceljs.org/)
@@ -149,8 +147,6 @@ vite.config.ts.timestamp-*
 .turbo
 
 **/node_modules/
-**/.env
-**/.env.*
 !**/.env.example
 
 # JetBrains IDEs (WebStorm / IntelliJ)
@@ -165,3 +161,4 @@ Thumbs.db
 
 # Test coverage
 **/coverage/
+config.bat
