@@ -256,7 +256,7 @@
             "description": "Already processed"
           },
           "201": {
-            "description": "Registered lot: lotId, mineralType, weight, weightUnit, status, version, originEvidenceStatus, transportStatus, qrProvesOrigin"
+            "description": "Registered lot: lotId, status, version, originEvidenceStatus"
           },
           "400": {
             "description": "Invalid input"
