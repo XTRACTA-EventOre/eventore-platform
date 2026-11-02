@@ -2,12 +2,12 @@ name: Sprint 1 acceptance
 on:
   pull_request:
   push:
-    branches: [develop, fix/sprint1-complete]
+    branches: [develop]
 permissions:
   contents: read
 jobs:
   acceptance:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     services:
       postgres:
@@ -18,7 +18,7 @@ jobs:
           POSTGRES_DB: eventore_test
         ports: ['5432:5432']
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U eventore -d eventore_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
