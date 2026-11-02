@@ -14,9 +14,12 @@ import { createLotLookupRouter } from '../http/lotLookup.routes.js';
 const requireSession = (req,res) => res.status(401).json({ error: {
         code: 'UNAUTHORIZED',message: 'Se requiere una sesión' } });
 
-export function createSprint1App({ pool,runtime,authenticate = requireSession,
+export function createSprint1App({ pool,runtime,authenticate = requireSession,authRouter,sameOrigin,
                                      appBaseUrl = 'http://localhost:5173' } = {}) {
     const app = express(); app.disable('x-powered-by'); app.use(express.json());
+    app.use((_req,res,next) => { res.set('Cache-Control','no-store'); res.set('X-Content-Type-Options','nosniff'); next(); });
+    if (sameOrigin) app.use(sameOrigin);
+    if (authRouter) app.use('/api/v1/auth',authRouter);
     app.use('/api/v1/health',healthRouter);
     if (!runtime && pool) {
         const unitOfWork = new PgUnitOfWork(pool); const lotStore = new PgLotStore(pool);
@@ -40,3 +43,4 @@ export function createSprint1App({ pool,runtime,authenticate = requireSession,
         synchronizeEvents: new SynchronizeEvents({ eventProcessor: runtime.processor }) }));
     return app;
 }
+

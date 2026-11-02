@@ -262,7 +262,7 @@ Relevant HTTP codes:
 
 Business endpoints require an authenticated identity associated with an organization and permissions.
 
-JWT is the selected token mechanism, but token issuance and the complete Identity and Access module are not implemented by this document.
+Sprint 1 uses an opaque server-side session in an HttpOnly cookie. Login, session lookup and logout are exposed under /api/v1/auth. Tenant identity is loaded from PostgreSQL on each protected request. JWT and complete role administration remain a separate Identity and Access increment; no JWT support is claimed by this implementation. See ../sprint1-completion.md for provisioning and security decisions.
 
 Tests may use an injected identity adapter or test double. Production endpoints must not trust arbitrary tenant IDs sent by clients.
 
@@ -301,3 +301,4 @@ A feature is completed when:
 - The code is reviewed through a Pull Request.
 - The feature is merged into develop.
 - Evidence of implementation is available for the Sprint Review.
+
