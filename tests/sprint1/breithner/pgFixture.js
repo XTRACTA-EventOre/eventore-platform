@@ -21,7 +21,7 @@ export async function makePgRuntime() {
         await admin.end();
     }
     try {
-        for (const file of ['lots/001_register_lots.sql','messaging/002_inbox_outbox.sql']) {
+        for (const file of ['lots/001_register_lots.sql','messaging/002_inbox_outbox.sql','identity/003_sessions.sql']) {
             const sql = await readFile(new URL('../../../database/migrations/'+file,import.meta.url),'utf8');
             await pool.query(sql);
         }
@@ -32,3 +32,4 @@ export async function makePgRuntime() {
         return { pool,unitOfWork,lotStore,journal,processor,close };
     } catch (error) { await close(); throw error; }
 }
+

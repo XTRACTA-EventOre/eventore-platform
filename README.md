@@ -4,18 +4,18 @@ Proyecto universitario del equipo **XTRACTA** para una plataforma de trazabilida
 
 ## Estado del proyecto
 
-Repositorio inicial de colaboración. La implementación está pendiente; todavía no hay comandos para ejecutar el backend ni pruebas automatizadas.
+Sprint 1 integra registro de lotes, captura offline persistente, sincronización, idempotencia y consulta QR. Consulta [instalación, decisiones y aceptación](docs/sprint1-completion.md) antes de iniciar la demo. El workflow Sprint 1 acceptance verifica backend, frontend, PostgreSQL y navegador.
 
 ## Stack previsto
 
 - Frontend: Vue.js y JavaScript.
 - Backend REST: Node.js y Express.js.
-- Autenticación: JWT.
+- Autenticación Sprint 1: sesiones opacas HttpOnly; JWT y roles completos quedan para el módulo de identidad.
 - Persistencia: PostgreSQL.
 - Documentación de API: OpenAPI / Swagger.
 - Pruebas previstas: Jest, Supertest y Postman.
 
-Las versiones y las instrucciones de instalación se documentarán al incorporar la implementación.
+Requisitos: Node 24 y PostgreSQL 16+. API documentada en /api/docs (Swagger requiere internet) y /api/v1/openapi.json. Los comandos de migración y creación de usuarios se describen en la guía de instalación.
 
 ## GitFlow
 
@@ -60,3 +60,4 @@ No subir secretos, credenciales, archivos `.env` ni `node_modules`. El archivo `
 Las invitaciones de los tres compañeros quedan pendientes hasta contar con sus usuarios de GitHub. No hay invitaciones enviadas en esta inicialización.
 
 La revisión de pull requests es una convención de trabajo; no implica que haya reglas automáticas de protección configuradas.
+
