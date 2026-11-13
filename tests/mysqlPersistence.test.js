@@ -11,11 +11,12 @@ suite('MySQL storage guarantees', () => {
     try {
       const weight = '12345678901234567890123456789012345.123456789012345678901234567891';
       const input = { ...event, clientEventId: randomUUID(), occurredAt: '2026-11-13T12:00:00.123456-05:00',
-        payload: { ...event.payload, weight,
+        payload: { ...event.payload, weight, mineralType: 'Mineral declarado con una descripción de más de treinta y dos caracteres',
           originEvidence: { reference: 'REF-Ñ', source: 'Mina Áncash ⛏️' } } };
       const outcome = await r.processor.process({ tenantId, actorId: 'test-user', sourceId: 'device-01', event: input });
       expect(outcome.status).toBe('Accepted');
       expect((await r.lotStore.findById({ tenantId, lotId: outcome.lotId })).weight).toBe(weight);
+      expect((await r.lotStore.findById({ tenantId, lotId: outcome.lotId })).mineralType).toBe(input.payload.mineralType);
       const [[stored]] = await r.pool.query("SELECT occurred_at,payload,DATE_FORMAT(occurred_at,'%f') AS micros FROM trace_events");
       expect(stored.occurred_at.toISOString()).toBe('2026-11-13T17:00:00.123Z');
       expect(stored.micros).toBe('123456');
