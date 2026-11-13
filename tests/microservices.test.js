@@ -9,7 +9,7 @@ describe('separate service boundaries', () => {
   test('gateway sends requests to their owner and preserves session cookies and binary QR', async () => {
     const calls = [];
     const gateway = createGatewayApp({ identityUrl: 'http://identity:3001',
-      traceabilityUrl: 'http://traceability:3002', serveFrontend: false,
+      traceabilityUrl: 'http://traceability:3002',
       fetchImpl: async (url, options) => {
         calls.push({ url: String(url), cookie: options.headers.cookie });
         if (String(url).includes('/auth/')) return new Response('{}', {

@@ -22,46 +22,47 @@ services:
       interval: 5s
       retries: 12
   identity-migrate:
-    build: { context: ., dockerfile: backend/Dockerfile }
+    build: { context: ., dockerfile: Dockerfile }
     command: ["node", "scripts/migrate-service.js", "identity"]
     environment:
       DATABASE_URL: postgres://identity:${IDENTITY_DB_PASSWORD}@identity-db:5432/identity
     depends_on:
       identity-db: { condition: service_healthy }
   traceability-migrate:
-    build: { context: ., dockerfile: backend/Dockerfile }
+    build: { context: ., dockerfile: Dockerfile }
     command: ["node", "scripts/migrate-service.js", "traceability"]
     environment:
       DATABASE_URL: postgres://traceability:${TRACEABILITY_DB_PASSWORD}@traceability-db:5432/traceability
     depends_on:
       traceability-db: { condition: service_healthy }
   identity:
-    build: { context: ., dockerfile: backend/Dockerfile }
+    build: { context: ., dockerfile: Dockerfile }
     command: ["node", "src/services/identity/server.js"]
     environment:
       DATABASE_URL: postgres://identity:${IDENTITY_DB_PASSWORD}@identity-db:5432/identity
       INTERNAL_AUTH_SECRET: ${INTERNAL_AUTH_SECRET:?set INTERNAL_AUTH_SECRET}
-      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3000}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
       PORT: 3001
     depends_on:
       identity-migrate: { condition: service_completed_successfully }
   traceability:
-    build: { context: ., dockerfile: backend/Dockerfile }
+    build: { context: ., dockerfile: Dockerfile }
     command: ["node", "src/services/traceability/server.js"]
     environment:
       DATABASE_URL: postgres://traceability:${TRACEABILITY_DB_PASSWORD}@traceability-db:5432/traceability
       IDENTITY_URL: http://identity:3001
       INTERNAL_AUTH_SECRET: ${INTERNAL_AUTH_SECRET:?set INTERNAL_AUTH_SECRET}
-      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3000}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
       PORT: 3002
     depends_on:
       traceability-migrate: { condition: service_completed_successfully }
       identity: { condition: service_started }
   gateway:
-    build: { context: ., dockerfile: backend/Dockerfile }
+    build: { context: ., dockerfile: Dockerfile }
     command: ["node", "src/services/gateway/server.js"]
     environment:
       IDENTITY_URL: http://identity:3001
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
       TRACEABILITY_URL: http://traceability:3002
       PORT: 3000
     ports: ["3000:3000"]

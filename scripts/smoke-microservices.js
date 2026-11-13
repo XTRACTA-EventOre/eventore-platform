@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 
-const base = process.env.APP_BASE_URL ?? 'http://localhost:3000';
+const base = process.env.API_BASE_URL ?? 'http://localhost:3000';
 const password = process.env.SMOKE_PASSWORD;
 if (!password) throw new Error('Configura SMOKE_PASSWORD');
 let ready = false;

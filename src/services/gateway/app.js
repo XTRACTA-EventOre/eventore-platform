@@ -1,11 +1,27 @@
 import express from 'express';
-import { existsSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 
-export function createGatewayApp({ identityUrl, traceabilityUrl, fetchImpl = fetch, serveFrontend = true }) {
+export function createGatewayApp({ identityUrl, traceabilityUrl, fetchImpl = fetch, appBaseUrl = 'http://localhost:5173' }) {
   if (!identityUrl || !traceabilityUrl) throw new Error('Configura IDENTITY_URL y TRACEABILITY_URL');
   const app = express();
   app.disable('x-powered-by');
+  const allowedOrigin = new URL(appBaseUrl).origin;
+  app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    if (origin && origin !== allowedOrigin) {
+      return res.status(403).json({ error: { code: 'INVALID_ORIGIN', message: 'Origen no autorizado' } });
+    }
+    if (origin) {
+      res.set('Access-Control-Allow-Origin', allowedOrigin);
+      res.set('Access-Control-Allow-Credentials', 'true');
+      res.vary('Origin');
+    }
+    if (req.method === 'OPTIONS') {
+      res.set('Access-Control-Allow-Methods', 'GET, HEAD, POST, OPTIONS');
+      res.set('Access-Control-Allow-Headers', 'Content-Type');
+      return res.status(204).end();
+    }
+    next();
+  });
   app.get('/api/v1/health', (_req, res) => res.json({ status: 'ok', service: 'gateway' }));
   const proxy = target => async (req, res) => {
     try {
@@ -32,12 +48,5 @@ export function createGatewayApp({ identityUrl, traceabilityUrl, fetchImpl = fet
   app.use(['/api/v1/lots', '/api/v1/events'], proxy(traceabilityUrl));
   app.use(['/api/v1/openapi.json', '/api/docs'], proxy(traceabilityUrl));
   app.use('/api', (_req, res) => res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Endpoint inexistente' } }));
-  if (serveFrontend) {
-    const dist = fileURLToPath(new URL('../../../../frontend/dist/', import.meta.url));
-    if (existsSync(dist)) {
-      app.use(express.static(dist));
-      app.get(['/', '/lots/:lotId'], (_req, res) => res.sendFile(`${dist}index.html`));
-    }
-  }
   return app;
 }
