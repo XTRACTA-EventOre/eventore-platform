@@ -1,65 +1,80 @@
-# EventOre
+# EventOre Platform
 
-Proyecto universitario del equipo **XTRACTA** para una plataforma de trazabilidad mineral.
+Backend de trazabilidad mineral de XTRACTA: Identity, Traceability, API Gateway,
+migraciones PostgreSQL, contratos API y pruebas. Requiere Node.js 24 y, para Compose,
+Docker con Compose v2. El frontend Vue/Vite se desarrolla en
+[XTRACTA-EventOre/eventore](https://github.com/XTRACTA-EventOre/eventore).
 
-## Estado del proyecto
+## Arranque recomendado
 
-La rama `feature/microservices-avance3` propone la [separación desplegable de Identity y Traceability](docs/microservices.md) y un [texto verificable para Avance 3](docs/avance3-sprint2.md). Las capacidades funcionales de Sprint 2 siguen pendientes según ese documento.
-
-Sprint 1 integra registro de lotes, captura offline persistente, sincronización, idempotencia y consulta QR. Consulta [instalación, decisiones y aceptación](docs/sprint1-completion.md) antes de iniciar la demo. El workflow Sprint 1 acceptance verifica backend, frontend, PostgreSQL y navegador.
-
-## Stack previsto
-
-- Frontend: Vue.js y JavaScript.
-- Backend REST: Node.js y Express.js.
-- Autenticación Sprint 1: sesiones opacas HttpOnly; JWT y roles completos quedan para el módulo de identidad.
-- Persistencia: PostgreSQL.
-- Documentación de API: OpenAPI / Swagger.
-- Pruebas previstas: Jest, Supertest y Postman.
-
-Requisitos: Node 24 y PostgreSQL 16+. API documentada en /api/docs (Swagger requiere internet) y /api/v1/openapi.json. Los comandos de migración y creación de usuarios se describen en la guía de instalación.
-
-## GitFlow
-
-- `main`: versiones estables; rama principal del repositorio.
-- `develop`: integración del trabajo del equipo.
-- `feature/<descripcion>`: nace desde `develop` y se integra a `develop` mediante un pull request.
-- `release/<version>`: nace desde `develop`; al publicar se integra a `main` y a `develop`, y se etiqueta la versión en `main`.
-- `hotfix/<version>`: nace desde `main`; se integra a `main` y a `develop`.
-
-### Empezar una funcionalidad
-
-Sustituye `feature/mi-funcionalidad` por el nombre de la tarea asignada.
-
-```bash
-git clone https://github.com/XTRACTA-EventOre/eventore.git
-cd eventore
+```sh
+git clone https://github.com/XTRACTA-EventOre/eventore-platform.git
+cd eventore-platform
 git switch develop
-git pull --ff-only origin develop
-git switch -c feature/mi-funcionalidad
+# Mientras el PR de independencia esté abierto:
+# git switch feature/independent-backend
+cp .env.compose.example .env
+# Editar .env: sustituir contraseñas y secreto interno; APP_BASE_URL es el origen del frontend.
+docker compose up -d --build
+docker compose ps
 ```
 
-Después de editar los archivos, revisa lo que vas a subir:
+En PowerShell, usar `Copy-Item .env.compose.example .env`. Los dos jobs de migración
+deben finalizar con código 0. La API está en `http://localhost:3000/api/v1/health`;
+OpenAPI en `/api/v1/openapi.json` y Swagger en `/api/docs`. El gateway sirve solo APIs.
 
-```bash
-git status
-git add ruta/al/archivo
-git diff --cached
-git commit -m "feat: describe la funcionalidad implementada"
-git push -u origin feature/mi-funcionalidad
+Para crear la primera cuenta, definir temporalmente `BOOTSTRAP_PASSWORD` con 12–128
+caracteres y ejecutar:
+
+```sh
+docker compose exec -e BOOTSTRAP_PASSWORD identity node scripts/create-user.js correo@ejemplo.com 11111111-1111-4111-8111-111111111111
 ```
 
-En GitHub, abre un pull request con **base `develop`** y **compare `feature/mi-funcionalidad`**. Solicita una revisión a un compañero antes de integrarlo.
+Eliminar después la variable del terminal. No existe una contraseña predeterminada.
+Arrancar el frontend en su propio repositorio con `npm ci --ignore-scripts` y `npm run dev`.
+Su proxy `/api` apunta al gateway en el puerto 3000; `APP_BASE_URL=http://localhost:5173`
+debe coincidir con el origen del navegador. Para preview offline, usar el puerto 4173
+y cambiar `APP_BASE_URL` a `http://localhost:4173` antes de recrear servicios.
 
-### Convenciones
+```sh
+docker compose logs --tail=100
+docker compose down
+```
 
-Usar Conventional Commits: `feat:`, `fix:`, `docs:`, `test:`, `refactor:` y `chore:`. Cada commit debe representar un cambio coherente. Las versiones seguirán Semantic Versioning (`MAJOR.MINOR.PATCH`).
+`down` conserva los volúmenes. No ejecutar `down --volumes` sobre datos que deban conservarse.
 
-No subir secretos, credenciales, archivos `.env` ni `node_modules`. El archivo `.env.example`, cuando se añada, debe contener únicamente valores de ejemplo.
+## Desarrollo con Node
 
-## Incorporación del equipo
+```sh
+npm ci --ignore-scripts
+npm test
+```
 
-Las invitaciones de los tres compañeros quedan pendientes hasta contar con sus usuarios de GitHub. No hay invitaciones enviadas en esta inicialización.
+Copiar `.env.example` a `.env`. Preparar dos bases PostgreSQL independientes. En cada
+terminal definir `DATABASE_URL` para la base correspondiente y `PORT` para su servicio:
 
-La revisión de pull requests es una convención de trabajo; no implica que haya reglas automáticas de protección configuradas.
+| Terminal | Configuración | Comandos |
+| --- | --- | --- |
+| Identity | DATABASE_URL de Identity, PORT=3001, INTERNAL_AUTH_SECRET, APP_BASE_URL | `npm run migrate:identity`, `npm run start:identity` |
+| Traceability | DATABASE_URL de Traceability, PORT=3002, IDENTITY_URL=http://localhost:3001, mismo secreto y origen | `npm run migrate:traceability`, `npm run start:traceability` |
+| Gateway | PORT=3000, IDENTITY_URL=http://localhost:3001, TRACEABILITY_URL=http://localhost:3002, APP_BASE_URL | `npm run dev` o `npm start` |
 
+Las variables del terminal prevalecen sobre `.env`. El comando `migrate` y `src/server.js`
+se conservan como compatibilidad/regresión del Sprint 1 con una base única; el despliegue
+normal usa los puntos de arranque y migraciones por servicio.
+
+## Verificación y colaboración
+
+`npm test` ejecuta Jest; las pruebas PostgreSQL requieren `TEST_DATABASE_URL` de una base
+desechable terminada en `_test`. Sin esa variable se omiten esas pruebas. CI ejecuta la
+regresión con PostgreSQL y un segundo workflow construye Compose, aplica migraciones,
+crea una cuenta temporal y prueba login, registro, consulta, QR y revocación.
+Para repetir ese recorrido: definir `API_BASE_URL` (gateway) y `SMOKE_PASSWORD` y ejecutar
+`npm run smoke` sobre una instalación de prueba que tenga `smoke@example.test` provisionado.
+
+Trabajar en `feature/*` desde `develop` y abrir PR hacia `develop`; no hacer push directo
+a `main`. [Historial y separación](docs/repository-split.md),
+[arquitectura y límites](docs/microservices.md),
+[aceptación Sprint 1](docs/sprint1-completion.md),
+[evidencias previas de Avance 3](docs/avance3-sprint2.md).
+Esta separación no completa las historias funcionales pendientes de los Avances 3 y 4.

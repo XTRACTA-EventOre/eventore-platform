@@ -10,7 +10,7 @@ La contribución de arquitectura de esta rama separa Identity y Extraction & Tra
 
 ## 5.3.2.2 Development Evidence for Sprint Review
 
-La evidencia de código es el [PR #25](https://github.com/XTRACTA-EventOre/eventore/pull/25), creado desde `feature/microservices-avance3` hacia `develop`. Incluye los puntos de arranque independientes, Compose, migraciones por servicio, gateway y pruebas. El código continúa pendiente de revisión e integración por el equipo. No se registran como terminadas las historias US18, US19, US23–US26 ni US05.
+La evidencia de código es el [PR #25](https://github.com/XTRACTA-EventOre/eventore/pull/25), creado desde `feature/microservices-avance3` hacia `develop`. Incluye los puntos de arranque independientes, Compose, migraciones por servicio, gateway y pruebas. El PR #25 fue integrado en develop antes de la separación de repositorios del 13 de noviembre; sus enlaces se conservan como evidencia histórica. No se registran como terminadas las historias US18, US19, US23–US26 ni US05.
 
 ## 5.1 Testing Suites & General Patterns
 
@@ -18,7 +18,7 @@ Se añadieron pruebas de enrutamiento, cookie, QR binario y fallo cerrado de aut
 
 ## 5.3.2.4 Execution Evidence for Sprint Review
 
-El script `backend/scripts/smoke-microservices.js` ejecutó en CI el inicio de sesión, registro y consulta de un lote, generación de QR y rechazo después de cerrar sesión. Este recorrido acredita el incremento funcional existente a través de los nuevos procesos. No acredita aún el recorrido de custodia, checkpoints, incidentes o recepción previsto para Sprint 2. Las capturas y el video de ese recorrido siguen pendientes.
+El script `scripts/smoke-microservices.js` (antes `backend/scripts/smoke-microservices.js`) ejecutó en CI el inicio de sesión, registro y consulta de un lote, generación de QR y rechazo después de cerrar sesión. Este recorrido acredita el incremento funcional existente a través de los nuevos procesos. No acredita aún el recorrido de custodia, checkpoints, incidentes o recepción previsto para Sprint 2. Las capturas y el video de ese recorrido siguen pendientes.
 
 ## 5.3.2.5 Microservices Documentation Evidence for Sprint Review
 
@@ -26,7 +26,7 @@ El script `backend/scripts/smoke-microservices.js` ejecutó en CI el inicio de s
 
 ## 5.3.2.6 Deployment Evidence for Sprint Review
 
-El archivo `compose.yaml` define Identity, Traceability y Gateway como contenedores distintos y dos bases de datos con volúmenes separados. El Dockerfile construye el frontend y empaqueta el backend; cada contenedor inicia un proceso diferente. El gateway es el único servicio con puerto publicado. Docker no estuvo disponible en el equipo local, pero el [workflow de Compose](https://github.com/XTRACTA-EventOre/eventore/actions/runs/43355749951) terminó correctamente en GitHub Actions: construyó las imágenes, aplicó migraciones, creó un usuario de prueba y ejecutó el recorrido HTTP. Esta es evidencia de despliegue temporal de aceptación en CI, no de producción ni de migración de datos existentes.
+El archivo `compose.yaml` define Identity, Traceability y Gateway como contenedores distintos y dos bases de datos con volúmenes separados. El Dockerfile de ese PR construía el frontend y empaquetaba el backend; tras la separación, el Dockerfile de eventore-platform empaqueta únicamente el backend; cada contenedor inicia un proceso diferente. El gateway es el único servicio con puerto publicado. Docker no estuvo disponible en el equipo local, pero el [workflow de Compose](https://github.com/XTRACTA-EventOre/eventore/actions/runs/43355749951) terminó correctamente en GitHub Actions: construyó las imágenes, aplicó migraciones, creó un usuario de prueba y ejecutó el recorrido HTTP. Esta es evidencia de despliegue temporal de aceptación en CI, no de producción ni de migración de datos existentes.
 
 ## 5.3.2.7 Team Collaboration y 5.3.2.8 Kanban
 
@@ -35,3 +35,7 @@ La rama feature y su PR permiten revisión del cambio. La asignación de respons
 ## Pendiente para completar la rúbrica
 
 Actualizar los diagramas C4 y los diagramas de datos según los contenedores desplegados; documentar contratos y ejemplos de cada nuevo servicio funcional; implementar y probar las historias del Sprint 2; ejecutar la aceptación con PostgreSQL y Compose; adjuntar resultados de CI, capturas de la demo, tablero y revisión del PR. La meta de endpoints funcionales de la rúbrica se calculará sobre el alcance acordado y probado, sin extrapolar los endpoints de Sprint 1 al producto completo.
+
+## Separación de repositorios posterior
+
+La [separación del 13 de noviembre](repository-split.md) conserva estas evidencias históricas. Los nuevos workflows separan regresión backend y aceptación frontend; sus resultados se deben consultar en sus respectivos PRs. El Avance 4 funcional continúa pendiente.

@@ -1,8 +1,8 @@
 {
-  "name": "backend",
+  "name": "eventore-platform",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "EventOre backend: Identity, Traceability, API Gateway and PostgreSQL migrations",
+  "main": "src/services/gateway/server.js",
   "scripts": {
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand",
     "dev": "nodemon src/services/gateway/server.js",
@@ -13,7 +13,8 @@
     "migrate": "node scripts/migrate.js",
     "migrate:identity": "node scripts/migrate-service.js identity",
     "migrate:traceability": "node scripts/migrate-service.js traceability",
-    "user:create": "node scripts/create-user.js"
+    "user:create": "node scripts/create-user.js",
+    "smoke": "node scripts/smoke-microservices.js"
   },
   "keywords": [],
   "author": "",
@@ -31,5 +32,8 @@
     "nodemon": "^3.1.14",
     "pngjs": "^7.0.0",
     "supertest": "^7.3.1"
+  },
+  "engines": {
+    "node": ">=24 <25"
   }
 }
