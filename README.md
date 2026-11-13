@@ -1,7 +1,7 @@
 # EventOre Platform
 
 Backend de trazabilidad mineral de XTRACTA: Identity, Traceability, API Gateway,
-migraciones PostgreSQL, contratos API y pruebas. Requiere Node.js 24 y, para Compose,
+migraciones MySQL 8.4, contratos API y pruebas. Requiere Node.js 24 y, para Compose,
 Docker con Compose v2. El frontend Vue/Vite se desarrolla en
 [XTRACTA-EventOre/eventore](https://github.com/XTRACTA-EventOre/eventore).
 
@@ -11,8 +11,8 @@ Docker con Compose v2. El frontend Vue/Vite se desarrolla en
 git clone https://github.com/XTRACTA-EventOre/eventore-platform.git
 cd eventore-platform
 git switch develop
-# Mientras el PR de independencia esté abierto:
-# git switch feature/independent-backend
+# Mientras el PR de MySQL esté abierto:
+# git switch feature/mysql-database
 cp .env.compose.example .env
 # Editar .env: sustituir contraseñas y secreto interno; APP_BASE_URL es el origen del frontend.
 docker compose up -d --build
@@ -50,7 +50,7 @@ npm ci --ignore-scripts
 npm test
 ```
 
-Copiar `.env.example` a `.env`. Preparar dos bases PostgreSQL independientes. En cada
+Copiar `.env.example` a `.env`. Preparar dos bases MySQL 8.4 independientes. En cada
 terminal definir `DATABASE_URL` para la base correspondiente y `PORT` para su servicio:
 
 | Terminal | Configuración | Comandos |
@@ -65,16 +65,19 @@ normal usa los puntos de arranque y migraciones por servicio.
 
 ## Verificación y colaboración
 
-`npm test` ejecuta Jest; las pruebas PostgreSQL requieren `TEST_DATABASE_URL` de una base
-desechable terminada en `_test`. Sin esa variable se omiten esas pruebas. CI ejecuta la
-regresión con PostgreSQL y un segundo workflow construye Compose, aplica migraciones,
+`npm test` ejecuta Jest; las pruebas MySQL 8.4 requieren `TEST_DATABASE_URL` de una base
+desechable terminada en `_test`, con permisos CREATE/DROP DATABASE solo para pruebas. Sin esa variable se omiten esas pruebas. CI ejecuta la
+regresión con MySQL 8.4 y un segundo workflow construye Compose, aplica migraciones,
 crea una cuenta temporal y prueba login, registro, consulta, QR y revocación.
 Para repetir ese recorrido: definir `API_BASE_URL` (gateway) y `SMOKE_PASSWORD` y ejecutar
 `npm run smoke` sobre una instalación de prueba que tenga `smoke@example.test` provisionado.
 
 Trabajar en `feature/*` desde `develop` y abrir PR hacia `develop`; no hacer push directo
-a `main`. [Historial y separación](docs/repository-split.md),
+a `main`. [Configuración MySQL y datos previos](docs/mysql.md),
+[Historial y separación](docs/repository-split.md),
 [arquitectura y límites](docs/microservices.md),
 [aceptación Sprint 1](docs/sprint1-completion.md),
 [evidencias previas de Avance 3](docs/avance3-sprint2.md).
 Esta separación no completa las historias funcionales pendientes de los Avances 3 y 4.
+
+Los volúmenes MySQL nuevos no reutilizan los de PostgreSQL. Este PR no traslada datos existentes: consultar [procedimiento y límites](docs/mysql.md).

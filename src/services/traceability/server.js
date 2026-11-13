@@ -1,9 +1,9 @@
 import 'dotenv/config';
-import pg from 'pg';
+import { createMySqlPool } from '../../shared/infrastructure/persistence/mysql.js';
 import { createTraceabilityApp } from './app.js';
 
 if (!process.env.DATABASE_URL) throw new Error('Configura DATABASE_URL');
-const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+const pool = createMySqlPool(process.env.DATABASE_URL);
 const app = createTraceabilityApp({ pool,
   identityUrl: process.env.IDENTITY_URL,
   internalSecret: process.env.INTERNAL_AUTH_SECRET,

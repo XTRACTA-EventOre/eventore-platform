@@ -38,7 +38,9 @@ export function assertIsoTimestamp(value, fieldName) {
     if (
         typeof value !== 'string' ||
         !ISO_TIMESTAMP_PATTERN.test(value) ||
-        Number.isNaN(Date.parse(value))
+        (/\.(\d+)/.exec(value)?.[1].length ?? 0) > 6 ||
+        Number.isNaN(Date.parse(value)) ||
+        new Date(value).getUTCFullYear() < 1000 || new Date(value).getUTCFullYear() > 9999
     ) {
         throw new DomainError(
             'INVALID_TIMESTAMP',

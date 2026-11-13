@@ -2,11 +2,19 @@
 
 Fuentes de planificación: [informe del equipo](https://docs.google.com/document/d/1qcsjouwkJjoxrh5jeC3HM2XAG_x1pxj-/edit), [guía y cronograma de entregables](https://docs.google.com/document/d/1QcjnmvQKywFScJD7_KZoCEX7KgB1_Aqm/edit) y [rúbrica](https://docs.google.com/spreadsheets/d/1OPFaIELK4sMlnQCOL8UV_ZVXMvff-mH1/edit). Fecha de corte: 12 de noviembre de 2026 (hora de Lima). Este texto refleja únicamente el estado observado en el repositorio y en las pruebas.
 
+## Cambio de base de datos posterior
+
+El 13 de noviembre de 2026 se eligió MySQL 8.4 para la implementación vigente.
+Consultar [configuración MySQL](mysql.md). Las menciones PostgreSQL y resultados
+anteriores de este documento son evidencia histórica del PR #25; no se atribuyen a
+MySQL. Los checks del PR MySQL aportarán la nueva evidencia verificable, sin afirmar
+que este cambio complete las historias pendientes ni el Avance 4.
+
 ## 5.3.2 Sprint 2: Product Implementation
 
 El Sprint 2 planifica integrar el incremento de Sprint 1 y desarrollar inicio de sesión seguro, permisos, aceptación y delegación de custodia, checkpoints, recepción en planta, cancelación e incidentes. Las tareas ET21–ET41 del informe son un plan de trabajo, no un registro de tareas terminadas. En el código revisado ya existía una sesión opaca con cookie HttpOnly, bloqueo por intentos fallidos, registro y consulta de lotes, sincronización idempotente y QR. No se verificaron implementaciones de roles por operación y organización, logística, custodia, checkpoints, recepción ni incidentes.
 
-La contribución de arquitectura de esta rama separa Identity y Extraction & Traceability en procesos y bases PostgreSQL independientes. Un gateway conserva las rutas públicas del frontend. La autorización de trazabilidad consulta a Identity mediante un contrato HTTP interno en cada petición protegida. Las migraciones se ejecutan por servicio; no hay consultas entre bases. [Diseño y guía de ejecución](microservices.md). Esta separación materializa parte de ET25 y ET29, pero no completa las historias funcionales del Sprint 2.
+La contribución de arquitectura de esta rama separa Identity y Extraction & Traceability en procesos y bases independientes (PostgreSQL en esa revisión histórica). Un gateway conserva las rutas públicas del frontend. La autorización de trazabilidad consulta a Identity mediante un contrato HTTP interno en cada petición protegida. Las migraciones se ejecutan por servicio; no hay consultas entre bases. [Diseño y guía de ejecución](microservices.md). Esta separación materializa parte de ET25 y ET29, pero no completa las historias funcionales del Sprint 2.
 
 ## 5.3.2.2 Development Evidence for Sprint Review
 
@@ -34,7 +42,7 @@ La rama feature y su PR permiten revisión del cambio. La asignación de respons
 
 ## Pendiente para completar la rúbrica
 
-Actualizar los diagramas C4 y los diagramas de datos según los contenedores desplegados; documentar contratos y ejemplos de cada nuevo servicio funcional; implementar y probar las historias del Sprint 2; ejecutar la aceptación con PostgreSQL y Compose; adjuntar resultados de CI, capturas de la demo, tablero y revisión del PR. La meta de endpoints funcionales de la rúbrica se calculará sobre el alcance acordado y probado, sin extrapolar los endpoints de Sprint 1 al producto completo.
+Actualizar los diagramas C4 y los diagramas de datos según los contenedores desplegados; documentar contratos y ejemplos de cada nuevo servicio funcional; implementar y probar las historias del Sprint 2; ejecutar la aceptación vigente con MySQL y Compose; adjuntar resultados de CI, capturas de la demo, tablero y revisión del PR. La meta de endpoints funcionales de la rúbrica se calculará sobre el alcance acordado y probado, sin extrapolar los endpoints de Sprint 1 al producto completo.
 
 ## Separación de repositorios posterior
 

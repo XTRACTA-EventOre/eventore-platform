@@ -1,7 +1,7 @@
 import express from 'express';
 import { healthRouter } from '../../../../shared/infrastructure/http/health.routes.js';
-import { PgUnitOfWork,PgLotStore } from '../persistence/lots/PgLotStore.js';
-import { PgEventJournal } from '../persistence/messaging/PgEventJournal.js';
+import { MySqlUnitOfWork,MySqlLotStore } from '../persistence/lots/MySqlLotStore.js';
+import { MySqlEventJournal } from '../persistence/messaging/MySqlEventJournal.js';
 import { TraceabilityEventProcessor } from '../../application/services/processing/TraceabilityEventProcessor.js';
 import { EventReplayGuard } from '../../application/services/processing/EventReplayGuard.js';
 import { SynchronizeEvents } from '../../application/use-cases/SynchronizeEvents.js';
@@ -22,8 +22,8 @@ export function createSprint1App({ pool,runtime,authenticate = requireSession,au
     if (authRouter) app.use('/api/v1/auth',authRouter);
     app.use('/api/v1/health',healthRouter);
     if (!runtime && pool) {
-        const unitOfWork = new PgUnitOfWork(pool); const lotStore = new PgLotStore(pool);
-        const journal = new PgEventJournal();
+        const unitOfWork = new MySqlUnitOfWork(pool); const lotStore = new MySqlLotStore(pool);
+        const journal = new MySqlEventJournal();
         const processor = new TraceabilityEventProcessor({ unitOfWork,lotStore,journal,
             replayGuard: new EventReplayGuard() });
         runtime = { processor,lotStore };
@@ -31,7 +31,7 @@ export function createSprint1App({ pool,runtime,authenticate = requireSession,au
     if (!runtime) {
         app.use(['/api/v1/lots','/api/v1/events'],authenticate,(req,res) =>
             res.status(503).json({ error: { code: 'STORAGE_UNAVAILABLE',
-                    message: 'Falta configurar PostgreSQL' } }));
+                    message: 'Falta configurar MySQL' } }));
         return app;
     }
     const getMineralLotDetails = new GetMineralLotDetails({ mineralLotReader: runtime.lotStore });
@@ -43,4 +43,3 @@ export function createSprint1App({ pool,runtime,authenticate = requireSession,au
         synchronizeEvents: new SynchronizeEvents({ eventProcessor: runtime.processor }) }));
     return app;
 }
-

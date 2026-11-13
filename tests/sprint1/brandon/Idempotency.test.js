@@ -1,7 +1,7 @@
 import { describe,test,expect } from '@jest/globals';
 import request from 'supertest';
 import { makeMemoryRuntime,makeApp,body,event,tenantId } from '../breithner/fixtures.js';
-import { makePgRuntime } from '../breithner/pgFixture.js';
+import { makeMySqlRuntime } from '../breithner/mysqlFixture.js';
 
 describe('ET16 reintentos',() => {
     test('mismo ID crea un solo efecto',async () => {
@@ -22,14 +22,14 @@ describe('ET16 reintentos',() => {
     });
     const sqlTest = process.env.TEST_DATABASE_URL ? test : test.skip;
     sqlTest('dos solicitudes concurrentes producen un solo lote',async () => {
-        const r = await makePgRuntime();
+        const r = await makeMySqlRuntime();
         try {
             const input = { tenantId,actorId: 'test-user',sourceId: 'device-01',event };
             const result = await Promise.all([r.processor.process(input),r.processor.process(input)]);
             expect(result.map(x => x.status).sort()).toEqual(['Accepted','AlreadyProcessed']);
             expect(new Set(result.map(x => x.lotId)).size).toBe(1);
-            const count = await r.pool.query('SELECT count(*)::int AS n FROM mineral_lots');
-            expect(count.rows[0].n).toBe(1);
+            const [count] = await r.pool.query('SELECT count(*) AS n FROM mineral_lots');
+            expect(Number(count[0].n)).toBe(1);
         } finally { await r.close(); }
     });
 });

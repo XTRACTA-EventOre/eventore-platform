@@ -1,45 +1,53 @@
 services:
   identity-db:
-    image: postgres:16-alpine
+    image: mysql:8.4
+    command: ["--default-time-zone=+00:00"]
     environment:
-      POSTGRES_USER: identity
-      POSTGRES_PASSWORD: ${IDENTITY_DB_PASSWORD:?set IDENTITY_DB_PASSWORD}
-      POSTGRES_DB: identity
-    volumes: [identity-data:/var/lib/postgresql/data]
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_USER: identity
+      MYSQL_PASSWORD: ${IDENTITY_DB_PASSWORD:?set IDENTITY_DB_PASSWORD}
+      MYSQL_DATABASE: identity
+    volumes: [identity-mysql-data:/var/lib/mysql]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U identity -d identity"]
+      test: ["CMD-SHELL", 'MYSQL_PWD="$$MYSQL_PASSWORD" mysql --protocol=TCP -h 127.0.0.1 -u identity -D identity -e "SELECT 1"']
       interval: 5s
-      retries: 12
+      retries: 30
+      timeout: 5s
+      start_period: 20s
   traceability-db:
-    image: postgres:16-alpine
+    image: mysql:8.4
+    command: ["--default-time-zone=+00:00"]
     environment:
-      POSTGRES_USER: traceability
-      POSTGRES_PASSWORD: ${TRACEABILITY_DB_PASSWORD:?set TRACEABILITY_DB_PASSWORD}
-      POSTGRES_DB: traceability
-    volumes: [traceability-data:/var/lib/postgresql/data]
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_USER: traceability
+      MYSQL_PASSWORD: ${TRACEABILITY_DB_PASSWORD:?set TRACEABILITY_DB_PASSWORD}
+      MYSQL_DATABASE: traceability
+    volumes: [traceability-mysql-data:/var/lib/mysql]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U traceability -d traceability"]
+      test: ["CMD-SHELL", 'MYSQL_PWD="$$MYSQL_PASSWORD" mysql --protocol=TCP -h 127.0.0.1 -u traceability -D traceability -e "SELECT 1"']
       interval: 5s
-      retries: 12
+      retries: 30
+      timeout: 5s
+      start_period: 20s
   identity-migrate:
     build: { context: ., dockerfile: Dockerfile }
     command: ["node", "scripts/migrate-service.js", "identity"]
     environment:
-      DATABASE_URL: postgres://identity:${IDENTITY_DB_PASSWORD}@identity-db:5432/identity
+      DATABASE_URL: mysql://identity:${IDENTITY_DB_PASSWORD}@identity-db:3306/identity
     depends_on:
       identity-db: { condition: service_healthy }
   traceability-migrate:
     build: { context: ., dockerfile: Dockerfile }
     command: ["node", "scripts/migrate-service.js", "traceability"]
     environment:
-      DATABASE_URL: postgres://traceability:${TRACEABILITY_DB_PASSWORD}@traceability-db:5432/traceability
+      DATABASE_URL: mysql://traceability:${TRACEABILITY_DB_PASSWORD}@traceability-db:3306/traceability
     depends_on:
       traceability-db: { condition: service_healthy }
   identity:
     build: { context: ., dockerfile: Dockerfile }
     command: ["node", "src/services/identity/server.js"]
     environment:
-      DATABASE_URL: postgres://identity:${IDENTITY_DB_PASSWORD}@identity-db:5432/identity
+      DATABASE_URL: mysql://identity:${IDENTITY_DB_PASSWORD}@identity-db:3306/identity
       INTERNAL_AUTH_SECRET: ${INTERNAL_AUTH_SECRET:?set INTERNAL_AUTH_SECRET}
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
       PORT: 3001
@@ -49,7 +57,7 @@ services:
     build: { context: ., dockerfile: Dockerfile }
     command: ["node", "src/services/traceability/server.js"]
     environment:
-      DATABASE_URL: postgres://traceability:${TRACEABILITY_DB_PASSWORD}@traceability-db:5432/traceability
+      DATABASE_URL: mysql://traceability:${TRACEABILITY_DB_PASSWORD}@traceability-db:3306/traceability
       IDENTITY_URL: http://identity:3001
       INTERNAL_AUTH_SECRET: ${INTERNAL_AUTH_SECRET:?set INTERNAL_AUTH_SECRET}
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
@@ -70,5 +78,5 @@ services:
       identity: { condition: service_started }
       traceability: { condition: service_started }
 volumes:
-  identity-data:
-  traceability-data:
+  identity-mysql-data:
+  traceability-mysql-data:
