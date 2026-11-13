@@ -1,18 +1,10 @@
-FROM node:24-alpine AS frontend-build
-WORKDIR /app/frontend
-COPY frontend/package*.json ./
-RUN npm ci --ignore-scripts
-COPY frontend ./
-RUN npm run build
-
 FROM node:24-alpine
-WORKDIR /app/backend
-COPY backend/package*.json ./
+WORKDIR /app
+COPY package*.json ./
 RUN npm ci --omit=dev --ignore-scripts
-COPY backend/src ./src
-COPY backend/scripts ./scripts
-COPY backend/database ./database
-COPY backend/docs ./docs
-COPY --from=frontend-build /app/frontend/dist /app/frontend/dist
+COPY src ./src
+COPY scripts ./scripts
+COPY database ./database
+COPY docs/openapi.json ./docs/openapi.json
 USER node
 CMD ["node", "src/services/gateway/server.js"]

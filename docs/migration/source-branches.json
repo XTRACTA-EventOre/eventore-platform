@@ -1,0 +1,117 @@
+{
+  "develop": {
+    "source": "eec4cc8ee991f6d248684e88443acd5d73160214",
+    "destination_branch": "develop",
+    "destination": "342c0ac9939076428ca563884cfedba6d8a7d6e3"
+  },
+  "feature/docs-sprint1-contract": {
+    "source": "d1ff48d26911fcd9a6b5a6e5652487685ef7b10d",
+    "destination_branch": "feature/docs-sprint1-contract",
+    "destination": "625c563f0216d0e68fcc9dfdc7dec7d74f17ced6"
+  },
+  "feature/et01-lot-domain": {
+    "source": "c499dabe68ce1eec6c9e5a096da6a40f8a9fd9d3",
+    "destination_branch": "feature/et01-lot-domain",
+    "destination": "f7d87b2861d2812f50cd03b93ca45dfd3f81bc6d"
+  },
+  "feature/et02-postgresql-lots": {
+    "source": "d0e5c4cf2798cac879912526ec7298c84e981d52",
+    "destination_branch": "feature/et02-postgresql-lots",
+    "destination": "b9c0879981ccc7b065bfcf06b7cf7f4cbb50abda"
+  },
+  "feature/et03-register-lot-api": {
+    "source": "f7f6b478d402b2160b7b564630f3827067b59083",
+    "destination_branch": "feature/et03-register-lot-api",
+    "destination": "68f3e2d7594e90db7869e4d1179d853e21d23efb"
+  },
+  "feature/et05-offline-capture": {
+    "source": "db478bbe6a90433188a0a0e6223997f3585c9176",
+    "destination_branch": "feature/et05-offline-capture",
+    "destination": "0bd08123e0408b496d3adee1e2586c17598be872"
+  },
+  "feature/et06-indexeddb-storage": {
+    "source": "e37da2c2d1d0cc4145ad9663983571823e80ba4a",
+    "destination_branch": "feature/et06-indexeddb-storage",
+    "destination": "c8262f23f89c92718c8db81c473414ec695e7a44"
+  },
+  "feature/et07-sync-status": {
+    "source": "b5d5bc753380a69ca1cf0ab11f35a57c9da0f8f4",
+    "destination_branch": "feature/et07-sync-status",
+    "destination": "d1d777817e9cb32d4c48e44fd9bdd36e76e3d3f8"
+  },
+  "feature/et09-synchronize-api": {
+    "source": "9b80bc89f9fcc942b3821263f5ee9a2b240bb1cb",
+    "destination_branch": "feature/et09-synchronize-api",
+    "destination": "8bfd746ab61cd92abbf2f5927b4a131991dd71ee"
+  },
+  "feature/et10-auto-sync-client": {
+    "source": "f8229717a173e26392f11652ce45ce41dbf4ec47",
+    "destination_branch": "feature/et10-auto-sync-client",
+    "destination": "fe78f61a33ea01cd8fb7738645c2fb4a3bc98a0a"
+  },
+  "feature/et11-event-results": {
+    "source": "50dcf70fee85e18ecac7039f7b5e6cb5cc5a964a",
+    "destination_branch": "feature/et11-event-results",
+    "destination": "013b5e84cbe68623c5769f6fe693166eafec680f"
+  },
+  "feature/et13-event-idempotency": {
+    "source": "3cd1f25184d81c99c81c11f6f25ef84978deaaec",
+    "destination_branch": "feature/et13-event-idempotency",
+    "destination": "cef3f6e0f8a3eb1969a7c2d294749956c6bebb5d"
+  },
+  "feature/et14-event-conflicts": {
+    "source": "55efb7d35c8aabe2c39176d4c09594de5bdfbd40",
+    "destination_branch": "feature/et14-event-conflicts",
+    "destination": "4f4ce2b1791110c7e76287ec02be0f7ca43ae8ac"
+  },
+  "feature/et16-idempotency-tests": {
+    "source": "4db08f21b81fae2aee093e3bc429db4c17e3ba69",
+    "destination_branch": "feature/et16-idempotency-tests",
+    "destination": "dab2842b2ac06d4b08c65d1a3f137d5b1cc4f799"
+  },
+  "feature/et17-lot-qr": {
+    "source": "a96bf154fb3380d4a4349251314176c93f053c8e",
+    "destination_branch": "feature/et17-lot-qr",
+    "destination": "55a862acf2238ea9b83523d98298c2d3f373378c"
+  },
+  "feature/et18-qr-lookup": {
+    "source": "7b48a02fa4580c4a489b005900d5140e4e044e42",
+    "destination_branch": "feature/et18-qr-lookup",
+    "destination": "093da96c2a1ad522ebe3d4d22db04a1e49cb4016"
+  },
+  "feature/et19-cancelled-lot-validation": {
+    "source": "2187ee1f8f56a33e50faba581277cf3138af714c",
+    "destination_branch": "feature/et19-cancelled-lot-validation",
+    "destination": "8a870e8d42354f0a99d5c884696af87677ecca32"
+  },
+  "feature/microservices-avance3": {
+    "source": "173795ede8ba90b5bba6bd2c13b8cf4c9ac4a41f",
+    "destination_branch": "feature/microservices-avance3",
+    "destination": "126ba1c3c720e3da1abcc787ddede55752b5a7df"
+  },
+  "feature/setup-project": {
+    "source": "4db262316ab2b71dcccb64a63a8916556d4cf8c2",
+    "destination_branch": "feature/setup-project",
+    "destination": "5394e7ed9940faf2b3cadfe6079a349a1cef30df"
+  },
+  "fix/et07-capture-sync-status": {
+    "source": "8d08ba1cb0e671b7781c37d34a8e7ca916fb8ac4",
+    "destination_branch": "fix/et07-capture-sync-status",
+    "destination": "8c0334230155449bafb6aa758c7a883f25004090"
+  },
+  "fix/sprint1-complete": {
+    "source": "38b69e926bcbb3f6fb060961b8a96bf3dfe63b12",
+    "destination_branch": "fix/sprint1-complete",
+    "destination": "087f5b73bf7c57737d975db76ab38631a24cb51a"
+  },
+  "fix/sprint1-test-dependencies": {
+    "source": "3ec6f246715bdec495ab1ffa4266e5a4dbbe2d43",
+    "destination_branch": "fix/sprint1-test-dependencies",
+    "destination": "88e948b2ac827ccdfd12b705fdee40a9218e406c"
+  },
+  "main": {
+    "source": "6a942f03f207b93104548420ef2542f871141c7b",
+    "destination_branch": "archive/source-main",
+    "destination": "4a187c16779f98fb8db01a18c0a72249676f8924"
+  }
+}
