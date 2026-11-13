@@ -1,3 +1,4 @@
+import { requirePermission } from '../../../../shared/infrastructure/http/permissions.js';
 import { Router } from 'express';
 
 import {
@@ -23,6 +24,7 @@ export function createLotLookupRouter({
     router.get(
         '/:lotId',
         authenticate,
+        requirePermission('lots.read'),
         controller
     );
 

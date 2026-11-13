@@ -6,7 +6,7 @@ import { MySqlEventJournal } from '../../../src/contexts/traceability/infrastruc
 import { TraceabilityEventProcessor } from '../../../src/contexts/traceability/application/services/processing/TraceabilityEventProcessor.js';
 import { EventReplayGuard } from '../../../src/contexts/traceability/application/services/processing/EventReplayGuard.js';
 
-export async function makeMySqlRuntime() {
+export async function makeMySqlRuntime({ service } = {}) {
   const url = new URL(process.env.TEST_DATABASE_URL);
   if (url.protocol !== 'mysql:' || !decodeURIComponent(url.pathname).endsWith('_test')) {
     throw new Error('Usa únicamente una base MySQL cuyo nombre termine en _test');
@@ -25,7 +25,7 @@ export async function makeMySqlRuntime() {
     await admin.query(`CREATE DATABASE \`${database}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_bin`);
     url.pathname = '/' + database;
     pool = createMySqlPool(String(url));
-    await runMigrations(pool, [...migrationSets.traceability, ...migrationSets.identity]);
+    await runMigrations(pool, service ? migrationSets[service] : [...migrationSets.traceability, ...migrationSets.identity]);
     const unitOfWork = new MySqlUnitOfWork(pool), lotStore = new MySqlLotStore(pool);
     const journal = new MySqlEventJournal();
     const processor = new TraceabilityEventProcessor({ unitOfWork, lotStore, journal, replayGuard: new EventReplayGuard() });

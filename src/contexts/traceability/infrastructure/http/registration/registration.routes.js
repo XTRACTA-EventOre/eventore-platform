@@ -1,3 +1,4 @@
+import { requirePermission } from '../../../../../shared/infrastructure/http/permissions.js';
 import { Router } from 'express';
 import { assertUuid } from '../../../domain/validation/domainAssertions.js';
 import { DomainError } from '../../../domain/errors/DomainError.js';
@@ -5,7 +6,7 @@ import { DomainError } from '../../../domain/errors/DomainError.js';
 export function createRegistrationRouter({ processor,getMineralLotDetails,authenticate }) {
     if (typeof authenticate !== 'function') throw new Error('Falta autenticación');
     const router = Router();
-    router.post('/',authenticate,async (req,res) => {
+    router.post('/',authenticate,requirePermission('lots.register'),async (req,res) => {
         const identity = req.identity;
         if (!identity?.tenantId || !identity?.userId?.trim()) {
             return res.status(401).json({ error: {

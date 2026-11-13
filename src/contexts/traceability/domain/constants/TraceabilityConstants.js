@@ -1,6 +1,7 @@
 export const LotStatus = Object.freeze({
     REGISTERED: 'Registered',
-    CANCELLED: 'Cancelled'
+    CANCELLED: 'Cancelled',
+    IN_TRANSIT: 'InTransit'
 });
 
 export const EvidenceReviewStatus = Object.freeze({

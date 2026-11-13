@@ -1,6 +1,7 @@
 import { randomBytes, scrypt as derive, timingSafeEqual, createHash } from 'node:crypto';
 import { promisify } from 'node:util';
 import { Router } from 'express';
+import { accessForRoles } from './permissions.js';
 
 const scrypt = promisify(derive);
 const digest = value => createHash('sha256').update(value).digest('hex');
@@ -36,7 +37,11 @@ export function createSessionAuth({ pool, appBaseUrl, secure = false }) {
   const options = { httpOnly: true, sameSite: 'strict', secure, path: '/', maxAge: lifetime };
   const unauthorized = res => res.status(401).json({ error: {
     code: 'UNAUTHORIZED', message: 'Inicia sesión para continuar' } });
-  const identity = row => ({ userId: row.id, tenantId: row.tenant_id, email: row.email });
+  const identity = async (db, row) => {
+    const [roles] = await db.execute('SELECT role_name FROM app_user_roles WHERE user_id=? ORDER BY role_name', [row.id]);
+    return { userId: row.id, tenantId: row.tenant_id, email: row.email,
+      ...accessForRoles(roles.map(role => role.role_name)) };
+  };
   const unavailable = res => res.status(503).json({ error: {
     code: 'AUTH_UNAVAILABLE', message: 'Autenticación temporalmente no disponible' } });
   const authenticate = async (req, res, next) => {
@@ -48,7 +53,7 @@ export function createSessionAuth({ pool, appBaseUrl, secure = false }) {
         FROM app_sessions s JOIN app_users u ON u.id=s.user_id
         WHERE s.token_hash=? AND s.expires_at>UTC_TIMESTAMP(3) AND u.active=true`, [digest(token)]);
       if (!rows[0]) return unauthorized(res);
-      req.identity = identity(rows[0]);
+      req.identity = await identity(pool, rows[0]);
       next();
     } catch { return unavailable(res); }
   };
@@ -86,8 +91,9 @@ export function createSessionAuth({ pool, appBaseUrl, secure = false }) {
       const token = randomBytes(32).toString('hex');
       await tx.execute('INSERT INTO app_sessions(token_hash,user_id,expires_at) VALUES(?,?,?)',
         [digest(token), user.id, new Date(Date.now() + lifetime)]);
+      const currentIdentity = await identity(tx, user);
       await tx.commit();
-      res.cookie(cookieName, token, options).json({ identity: identity(user) });
+      res.cookie(cookieName, token, options).json({ identity: currentIdentity });
     } catch { if (tx) await tx.rollback().catch(() => {}); return unavailable(res); }
     finally { tx?.release(); }
   });

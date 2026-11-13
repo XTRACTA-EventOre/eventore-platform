@@ -95,7 +95,7 @@ export class GetMineralLotDetails {
             transportStatus:
                 lot.status === LotStatus.CANCELLED
                     ? 'Blocked'
-                    : 'RequiresValidation',
+                    : lot.status === LotStatus.IN_TRANSIT ? 'InTransit' : 'RequiresValidation',
             qrProvesOrigin: false
         };
     }

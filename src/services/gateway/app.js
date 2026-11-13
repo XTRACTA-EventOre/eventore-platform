@@ -1,6 +1,6 @@
 import express from 'express';
 
-export function createGatewayApp({ identityUrl, traceabilityUrl, fetchImpl = fetch, appBaseUrl = 'http://localhost:5173' }) {
+export function createGatewayApp({ identityUrl, traceabilityUrl, logisticsUrl, fetchImpl = fetch, appBaseUrl = 'http://localhost:5173' }) {
   if (!identityUrl || !traceabilityUrl) throw new Error('Configura IDENTITY_URL y TRACEABILITY_URL');
   const app = express();
   app.disable('x-powered-by');
@@ -16,7 +16,7 @@ export function createGatewayApp({ identityUrl, traceabilityUrl, fetchImpl = fet
       res.vary('Origin');
     }
     if (req.method === 'OPTIONS') {
-      res.set('Access-Control-Allow-Methods', 'GET, HEAD, POST, OPTIONS');
+      res.set('Access-Control-Allow-Methods', 'GET, HEAD, POST, PUT, OPTIONS');
       res.set('Access-Control-Allow-Headers', 'Content-Type');
       return res.status(204).end();
     }
@@ -45,6 +45,7 @@ export function createGatewayApp({ identityUrl, traceabilityUrl, fetchImpl = fet
     }
   };
   app.use('/api/v1/auth', proxy(identityUrl));
+  app.use('/api/v1/custody', proxy(logisticsUrl));
   app.use(['/api/v1/lots', '/api/v1/events'], proxy(traceabilityUrl));
   app.use(['/api/v1/openapi.json', '/api/docs'], proxy(traceabilityUrl));
   app.use('/api', (_req, res) => res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Endpoint inexistente' } }));

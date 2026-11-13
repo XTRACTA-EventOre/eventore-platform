@@ -41,7 +41,7 @@ const validBody = {
 };
 
 function authenticatedMiddleware(req, res, next) {
-    req.identity = {
+    req.identity = { permissions: ['lots.read','lots.register'],
         tenantId,
         userId: 'supervisor-01'
     };
