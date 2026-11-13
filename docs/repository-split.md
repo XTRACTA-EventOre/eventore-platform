@@ -68,3 +68,7 @@ La separación de repositorios prepara la evolución a microservicios; no acredi
 historias de custodia, roles, checkpoints, incidentes ni el Avance 4 completo.
 Las evidencias previas mantienen enlaces al monorepo y a sus runs originales.
 Los nuevos PRs y sus checks acreditan únicamente la separación y su regresión.
+
+## Decisión posterior de persistencia
+
+La implementación vigente cambia de PostgreSQL a MySQL 8.4 mediante un PR específico. La extracción de historial anterior sigue reflejando el motor original. Consultar [MySQL](mysql.md) para configuración y datos previos; no se ha ejecutado una conversión de datos productivos.
