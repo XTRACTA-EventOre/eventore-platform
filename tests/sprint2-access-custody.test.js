@@ -40,7 +40,7 @@ suite('US05, US18 and US19 across independent MySQL services', () => {
       ['operator','Operator',tenant], ['carrierA','Transporter',tenant], ['carrierB','Transporter',tenant],
       ['foreign','Supervisor',foreignTenant]]) {
       const id = randomUUID(); users[name] = id;
-      await identity.pool.execute('INSERT INTO app_users(id,tenant_id,email,password_hash) VALUES(?,?,?,?)', [id, owner, `${name}@example.test`, hash]);
+      await identity.pool.execute('INSERT INTO app_users(id,tenant_id,email,password_hash) VALUES(?,?,?,?)', [id, owner, `${name}@example.test`.toLowerCase(), hash]);
       await identity.pool.execute('INSERT INTO app_user_roles(user_id,role_name) VALUES(?,?)', [id, role]);
     }
     const identityUrl = await start(createIdentityApp({ pool: identity.pool, appBaseUrl: 'http://localhost:4173', internalSecret: secret }));
