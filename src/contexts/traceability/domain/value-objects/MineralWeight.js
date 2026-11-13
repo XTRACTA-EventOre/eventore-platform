@@ -23,6 +23,12 @@ export class MineralWeight {
             );
         }
 
+        const [integer, fraction = ''] = amount.split('.');
+        if (integer.length > 35 || fraction.length > 30) {
+            throw new DomainError('INVALID_WEIGHT_PRECISION',
+                'Mineral weight supports up to 35 integer and 30 fractional digits');
+        }
+
         if (!SUPPORTED_UNITS.includes(unit)) {
             throw new DomainError(
                 'UNSUPPORTED_WEIGHT_UNIT',

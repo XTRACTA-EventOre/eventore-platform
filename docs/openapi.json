@@ -38,7 +38,8 @@
           "weight": {
             "type": "string",
             "example": "125.50",
-            "description": "Positive decimal string"
+            "description": "Exact positive decimal string: at most 35 integer digits and 30 fractional digits; INVALID_WEIGHT_PRECISION if exceeded.",
+            "maxLength": 66
           },
           "weightUnit": {
             "type": "string",
@@ -87,7 +88,8 @@
           },
           "occurredAt": {
             "type": "string",
-            "format": "date-time"
+            "format": "date-time",
+            "description": "ISO 8601 timestamp, years 1000-9999 in UTC, at most six fractional second digits."
           },
           "dependencies": {
             "type": "array",

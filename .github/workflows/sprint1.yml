@@ -11,21 +11,22 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     services:
-      postgres:
-        image: postgres:16
+      mysql:
+        image: mysql:8.4
         env:
-          POSTGRES_USER: eventore
-          POSTGRES_PASSWORD: test-only-password
-          POSTGRES_DB: eventore_test
-        ports: ['5432:5432']
+          MYSQL_ROOT_HOST: "%"
+          MYSQL_ROOT_PASSWORD: test-only-password
+          MYSQL_DATABASE: eventore_test
+        ports: ['3306:3306']
         options: >-
-          --health-cmd "pg_isready -U eventore -d eventore_test"
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -ptest-only-password --silent"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 20
+          --health-start-period 20s
     env:
-      DATABASE_URL: postgres://eventore:test-only-password@localhost:5432/eventore_test
-      TEST_DATABASE_URL: postgres://eventore:test-only-password@localhost:5432/eventore_test
+      DATABASE_URL: mysql://root:test-only-password@localhost:3306/eventore_test
+      TEST_DATABASE_URL: mysql://root:test-only-password@localhost:3306/eventore_test
       APP_BASE_URL: http://localhost:5173
     steps:
       - uses: actions/checkout@v4

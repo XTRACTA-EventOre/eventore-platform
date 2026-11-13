@@ -1,15 +1,15 @@
 {
   "name": "eventore-platform",
   "version": "1.0.0",
-  "description": "EventOre backend: Identity, Traceability, API Gateway and PostgreSQL migrations",
+  "description": "EventOre backend: Identity, Traceability, API Gateway and MySQL 8.4 migrations",
   "main": "src/services/gateway/server.js",
   "scripts": {
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand",
-    "dev": "nodemon src/services/gateway/server.js",
-    "start": "node src/services/gateway/server.js",
-    "start:identity": "node src/services/identity/server.js",
-    "start:traceability": "node src/services/traceability/server.js",
-    "start:gateway": "node src/services/gateway/server.js",
+    "dev": "node init && nodemon src/services/gateway/server.js",
+    "start": "node init && node src/services/gateway/server.js",
+    "start:identity": "node init && node src/services/identity/server.js",
+    "start:traceability": "node init && node src/services/traceability/server.js",
+    "start:gateway": "node init && node src/services/gateway/server.js",
     "migrate": "node scripts/migrate.js",
     "migrate:identity": "node scripts/migrate-service.js identity",
     "migrate:traceability": "node scripts/migrate-service.js traceability",
@@ -23,7 +23,7 @@
   "dependencies": {
     "dotenv": "^18.0.6",
     "express": "^5.2.1",
-    "pg": "^8.23.1",
+    "mysql2": "^3.24.6",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {

@@ -1,11 +1,11 @@
 import 'dotenv/config';
-import pg from 'pg';
+import { createMySqlPool } from './shared/infrastructure/persistence/mysql.js';
 import { createSprint1App } from './contexts/traceability/infrastructure/bootstrap/createSprint1App.js';
 import { createSessionAuth } from './shared/infrastructure/http/sessionAuth.js';
 import { fileURLToPath } from 'node:url';
 
 const pool = process.env.DATABASE_URL
-    ? new pg.Pool({ connectionString: process.env.DATABASE_URL }) : null;
+    ? createMySqlPool(process.env.DATABASE_URL) : null;
 const appBaseUrl = process.env.APP_BASE_URL ?? 'http://localhost:5173';
 const auth = createSessionAuth({ pool, appBaseUrl, secure: process.env.NODE_ENV === 'production' });
 const app = createSprint1App({ pool, appBaseUrl, authenticate: auth.authenticate,
