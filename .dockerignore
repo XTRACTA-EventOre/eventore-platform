@@ -1,5 +1,9 @@
 .git
-**/node_modules
-**/.env
-**/test-results
-**/coverage
+node_modules
+.env
+.env.*
+!.env.example
+!.env.compose.example
+test-results
+coverage
+tests
