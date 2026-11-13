@@ -5,9 +5,14 @@
   "main": "index.js",
   "scripts": {
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand",
-    "dev": "node init && nodemon src/server.js",
-    "start": "node init && node src/server.js",
+    "dev": "nodemon src/services/gateway/server.js",
+    "start": "node src/services/gateway/server.js",
+    "start:identity": "node src/services/identity/server.js",
+    "start:traceability": "node src/services/traceability/server.js",
+    "start:gateway": "node src/services/gateway/server.js",
     "migrate": "node scripts/migrate.js",
+    "migrate:identity": "node scripts/migrate-service.js identity",
+    "migrate:traceability": "node scripts/migrate-service.js traceability",
     "user:create": "node scripts/create-user.js"
   },
   "keywords": [],

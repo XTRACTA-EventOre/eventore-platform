@@ -4,6 +4,8 @@ Proyecto universitario del equipo **XTRACTA** para una plataforma de trazabilida
 
 ## Estado del proyecto
 
+La rama `feature/microservices-avance3` propone la [separación desplegable de Identity y Traceability](docs/microservices.md) y un [texto verificable para Avance 3](docs/avance3-sprint2.md). Las capacidades funcionales de Sprint 2 siguen pendientes según ese documento.
+
 Sprint 1 integra registro de lotes, captura offline persistente, sincronización, idempotencia y consulta QR. Consulta [instalación, decisiones y aceptación](docs/sprint1-completion.md) antes de iniciar la demo. El workflow Sprint 1 acceptance verifica backend, frontend, PostgreSQL y navegador.
 
 ## Stack previsto
