@@ -13,7 +13,9 @@ suite('Sesion real y flujo integrado MySQL', () => {
     runtime = await makeMySqlRuntime();
     const hash = await hashPassword(password);
     for (const [email, organization] of [['a@example.test', tenant], ['b@example.test', randomUUID()], ['locked@example.test', tenant]]) {
-      await runtime.pool.query('INSERT INTO app_users(id,tenant_id,email,password_hash) VALUES(?,?,?,?)', [randomUUID(), organization, email, hash]);
+      const userId = randomUUID();
+      await runtime.pool.query('INSERT INTO app_users(id,tenant_id,email,password_hash) VALUES(?,?,?,?)', [userId, organization, email, hash]);
+      await runtime.pool.execute("INSERT INTO app_user_roles(user_id,role_name) VALUES(?,'Operator')", [userId]);
     }
     const auth = createSessionAuth({ pool: runtime.pool, appBaseUrl: 'http://localhost:3000' });
     app = createSprint1App({ pool: runtime.pool, authenticate: auth.authenticate, authRouter: auth.router, sameOrigin: auth.sameOrigin });

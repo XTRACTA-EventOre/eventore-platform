@@ -1,3 +1,4 @@
+import { requirePermission } from '../../../../../shared/infrastructure/http/permissions.js';
 import { Router } from 'express';
 import QRCode from 'qrcode';
 import { GetMineralLotQr } from '../../../application/use-cases/qr/GetMineralLotQr.js';
@@ -9,7 +10,7 @@ export function createQrRouter({ getMineralLotDetails,authenticate,appBaseUrl,
     if (!['http:','https:'].includes(base.protocol)) throw new Error('URL inválida');
     const getQr = new GetMineralLotQr({ getMineralLotDetails,base,encode });
     const router = Router();
-    router.get('/:lotId/qr',authenticate,async (req,res) => {
+    router.get('/:lotId/qr',authenticate,requirePermission('lots.read'),async (req,res) => {
         if (!req.identity?.tenantId || !req.identity?.userId?.trim()) {
             return res.status(401).json({ error: {
                     code: 'UNAUTHORIZED',message: 'Se requiere una sesión' } });

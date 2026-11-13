@@ -29,6 +29,28 @@ services:
       retries: 30
       timeout: 5s
       start_period: 20s
+  logistics-db:
+    image: mysql:8.4
+    command: ["--default-time-zone=+00:00"]
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_USER: logistics
+      MYSQL_PASSWORD: ${LOGISTICS_DB_PASSWORD:?set LOGISTICS_DB_PASSWORD}
+      MYSQL_DATABASE: logistics
+    volumes: [logistics-mysql-data:/var/lib/mysql]
+    healthcheck:
+      test: ["CMD-SHELL", 'MYSQL_PWD="$$MYSQL_PASSWORD" mysql --protocol=TCP -h 127.0.0.1 -u logistics -D logistics -e "SELECT 1"']
+      interval: 5s
+      retries: 30
+      timeout: 5s
+      start_period: 20s
+  logistics-migrate:
+    build: { context: ., dockerfile: Dockerfile }
+    command: ["node", "scripts/migrate-service.js", "logistics"]
+    environment:
+      DATABASE_URL: mysql://logistics:${LOGISTICS_DB_PASSWORD}@logistics-db:3306/logistics
+    depends_on:
+      logistics-db: { condition: service_healthy }
   identity-migrate:
     build: { context: ., dockerfile: Dockerfile }
     command: ["node", "scripts/migrate-service.js", "identity"]
@@ -65,6 +87,20 @@ services:
     depends_on:
       traceability-migrate: { condition: service_completed_successfully }
       identity: { condition: service_started }
+  logistics:
+    build: { context: ., dockerfile: Dockerfile }
+    command: ["node", "src/services/logistics/server.js"]
+    environment:
+      DATABASE_URL: mysql://logistics:${LOGISTICS_DB_PASSWORD}@logistics-db:3306/logistics
+      IDENTITY_URL: http://identity:3001
+      TRACEABILITY_URL: http://traceability:3002
+      INTERNAL_AUTH_SECRET: ${INTERNAL_AUTH_SECRET:?set INTERNAL_AUTH_SECRET}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
+      PORT: 3003
+    depends_on:
+      logistics-migrate: { condition: service_completed_successfully }
+      identity: { condition: service_started }
+      traceability: { condition: service_started }
   gateway:
     build: { context: ., dockerfile: Dockerfile }
     command: ["node", "src/services/gateway/server.js"]
@@ -72,11 +108,13 @@ services:
       IDENTITY_URL: http://identity:3001
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
       TRACEABILITY_URL: http://traceability:3002
+      LOGISTICS_URL: http://logistics:3003
       PORT: 3000
     ports: ["3000:3000"]
     depends_on:
       identity: { condition: service_started }
       traceability: { condition: service_started }
 volumes:
+  logistics-mysql-data:
   identity-mysql-data:
   traceability-mysql-data:

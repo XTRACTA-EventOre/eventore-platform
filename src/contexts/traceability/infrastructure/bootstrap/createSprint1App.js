@@ -1,3 +1,5 @@
+import { MySqlLotLifecycle } from '../persistence/lots/MySqlLotLifecycle.js';
+import { createLifecycleRouter } from '../http/lifecycle.routes.js';
 import express from 'express';
 import { healthRouter } from '../../../../shared/infrastructure/http/health.routes.js';
 import { MySqlUnitOfWork,MySqlLotStore } from '../persistence/lots/MySqlLotStore.js';
@@ -14,7 +16,7 @@ import { createLotLookupRouter } from '../http/lotLookup.routes.js';
 const requireSession = (req,res) => res.status(401).json({ error: {
         code: 'UNAUTHORIZED',message: 'Se requiere una sesión' } });
 
-export function createSprint1App({ pool,runtime,authenticate = requireSession,authRouter,sameOrigin,
+export function createSprint1App({ pool,runtime,authenticate = requireSession,authRouter,sameOrigin,verifyRecipient,
                                      appBaseUrl = 'http://localhost:5173' } = {}) {
     const app = express(); app.disable('x-powered-by'); app.use(express.json());
     app.use((_req,res,next) => { res.set('Cache-Control','no-store'); res.set('X-Content-Type-Options','nosniff'); next(); });
@@ -34,6 +36,8 @@ export function createSprint1App({ pool,runtime,authenticate = requireSession,au
                     message: 'Falta configurar MySQL' } }));
         return app;
     }
+    if (pool) app.use('/api/v1/lots', createLifecycleRouter({ lifecycle: new MySqlLotLifecycle(pool), authenticate,
+        verifyRecipient: verifyRecipient ?? (() => { throw new Error('Verificación de Identity no configurada'); }) }));
     const getMineralLotDetails = new GetMineralLotDetails({ mineralLotReader: runtime.lotStore });
     app.use('/api/v1/lots',createRegistrationRouter({
         processor: runtime.processor,getMineralLotDetails,authenticate }));

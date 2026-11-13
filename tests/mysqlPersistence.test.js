@@ -50,7 +50,7 @@ suite('MySQL storage guarantees', () => {
       await r.pool.execute('DELETE FROM schema_migrations WHERE name=?', [names[0]]);
       await runMigrations(r.pool, names);
       const [[{ n }]] = await r.pool.query('SELECT COUNT(*) AS n FROM schema_migrations');
-      expect(Number(n)).toBe(3);
+      expect(Number(n)).toBe(names.length);
       await r.pool.execute('UPDATE schema_migrations SET checksum=? WHERE name=?', ['0'.repeat(64), names[0]]);
       await expect(runMigrations(r.pool, names)).rejects.toThrow('La migración aplicada cambió');
     } finally { await r.close(); }

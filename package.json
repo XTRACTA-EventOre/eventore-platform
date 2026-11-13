@@ -14,7 +14,10 @@
     "migrate:identity": "node scripts/migrate-service.js identity",
     "migrate:traceability": "node scripts/migrate-service.js traceability",
     "user:create": "node scripts/create-user.js",
-    "smoke": "node scripts/smoke-microservices.js"
+    "smoke": "node scripts/smoke-microservices.js",
+    "start:logistics": "node src/services/logistics/server.js",
+    "migrate:logistics": "node scripts/migrate-service.js logistics",
+    "user:roles": "node scripts/set-user-roles.js"
   },
   "keywords": [],
   "author": "",

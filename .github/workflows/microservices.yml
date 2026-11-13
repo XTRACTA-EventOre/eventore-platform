@@ -10,6 +10,7 @@ jobs:
     timeout-minutes: 20
     env:
       IDENTITY_DB_PASSWORD: local-ci-identity-password
+      LOGISTICS_DB_PASSWORD: local-ci-logistics-password
       TRACEABILITY_DB_PASSWORD: local-ci-traceability-password
       INTERNAL_AUTH_SECRET: local-ci-long-shared-secret-change-in-production
       APP_BASE_URL: http://localhost:5173

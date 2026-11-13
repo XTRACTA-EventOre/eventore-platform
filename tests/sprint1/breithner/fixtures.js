@@ -52,7 +52,7 @@ export function makeMemoryRuntime() {
 export function makeApp(runtime,{ authenticated = true,owner = tenantId } = {}) {
     const app = express(); app.use(express.json());
     const authenticate = (req,res,next) => {
-        if (authenticated) req.identity = { tenantId: owner,userId: 'test-user' };
+        if (authenticated) req.identity = { tenantId: owner,userId: 'test-user', permissions: ['lots.read','lots.register'] };
         next();
     };
     const getMineralLotDetails = new GetMineralLotDetails({ mineralLotReader: runtime.lotStore });
