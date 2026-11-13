@@ -1,4 +1,3 @@
-
 # EventOre — Sprint 1 API Contracts
 
 ## 1. Purpose
@@ -13,7 +12,7 @@ These contracts allow domain, persistence, frontend and testing development to p
 
 ## 2. Architecture Rules
 
-- Domain entities must not depend on Express, Vue or PostgreSQL.
+- Domain entities must not depend on Express, Vue or MySQL 8.4.
 - Application services coordinate use cases.
 - Infrastructure implements persistence and HTTP adapters.
 - Frontend components must not contain business rules.
@@ -262,7 +261,7 @@ Relevant HTTP codes:
 
 Business endpoints require an authenticated identity associated with an organization and permissions.
 
-Sprint 1 uses an opaque server-side session in an HttpOnly cookie. Login, session lookup and logout are exposed under /api/v1/auth. Tenant identity is loaded from PostgreSQL on each protected request. JWT and complete role administration remain a separate Identity and Access increment; no JWT support is claimed by this implementation. See ../sprint1-completion.md for provisioning and security decisions.
+Sprint 1 uses an opaque server-side session in an HttpOnly cookie. Login, session lookup and logout are exposed under /api/v1/auth. Tenant identity is loaded from MySQL 8.4 on each protected request. JWT and complete role administration remain a separate Identity and Access increment; no JWT support is claimed by this implementation. See ../sprint1-completion.md for provisioning and security decisions.
 
 Tests may use an injected identity adapter or test double. Production endpoints must not trust arbitrary tenant IDs sent by clients.
 
@@ -302,3 +301,6 @@ A feature is completed when:
 - The feature is merged into develop.
 - Evidence of implementation is available for the Sprint Review.
 
+## MySQL precision constraints
+
+Weights remain exact positive decimal strings, with at most 35 integer digits and 30 fractional digits (DECIMAL(65,30)); overflow/rounding is rejected as INVALID_WEIGHT_PRECISION. Event timestamps must fit years 1000–9999 in UTC and have at most six fractional second digits; otherwise INVALID_TIMESTAMP is returned. Lookup normalizes decimal padding without converting to floating point. Routes and tenant/session requirements are unchanged.

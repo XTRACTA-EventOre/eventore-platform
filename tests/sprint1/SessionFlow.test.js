@@ -1,19 +1,19 @@
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
 import request from 'supertest';
 import { randomUUID } from 'node:crypto';
-import { makePgRuntime } from './breithner/pgFixture.js';
+import { makeMySqlRuntime } from './breithner/mysqlFixture.js';
 import { createSessionAuth, hashPassword } from '../../src/shared/infrastructure/http/sessionAuth.js';
 import { createSprint1App } from '../../src/contexts/traceability/infrastructure/bootstrap/createSprint1App.js';
 
 const suite = process.env.TEST_DATABASE_URL ? describe : describe.skip;
-suite('Sesion real y flujo integrado PostgreSQL', () => {
+suite('Sesion real y flujo integrado MySQL', () => {
   let runtime, app;
   const tenant = randomUUID(), password = 'Sprint1-test-password';
   beforeAll(async () => {
-    runtime = await makePgRuntime();
+    runtime = await makeMySqlRuntime();
     const hash = await hashPassword(password);
     for (const [email, organization] of [['a@example.test', tenant], ['b@example.test', randomUUID()], ['locked@example.test', tenant]]) {
-      await runtime.pool.query('INSERT INTO app_users(id,tenant_id,email,password_hash) VALUES($1,$2,$3,$4)', [randomUUID(), organization, email, hash]);
+      await runtime.pool.query('INSERT INTO app_users(id,tenant_id,email,password_hash) VALUES(?,?,?,?)', [randomUUID(), organization, email, hash]);
     }
     const auth = createSessionAuth({ pool: runtime.pool, appBaseUrl: 'http://localhost:3000' });
     app = createSprint1App({ pool: runtime.pool, authenticate: auth.authenticate, authRouter: auth.router, sameOrigin: auth.sameOrigin });
@@ -42,11 +42,26 @@ suite('Sesion real y flujo integrado PostgreSQL', () => {
     expect((await other.get(`/api/v1/lots/${lotId}`)).status).toBe(404);
     expect((await agent.post('/api/v1/auth/logout')).status).toBe(204);
     expect((await agent.get('/api/v1/auth/session')).status).toBe(401);
-    expect(Number((await runtime.pool.query('SELECT count(*) FROM mineral_lots')).rows[0].count)).toBe(1);
+    expect(Number((await runtime.pool.query('SELECT count(*) AS n FROM mineral_lots'))[0][0].n)).toBe(1);
   });
   test('rechaza origen ajeno y bloquea tras tres intentos fallidos', async () => {
     expect((await request(app).post('/api/v1/auth/login').set('Origin', 'https://other.example').send({})).status).toBe(403);
     for (let i=0;i<3;i++) expect((await request(app).post('/api/v1/auth/login').send({email:'locked@example.test',password:'incorrect'})).status).toBe(401);
     expect((await request(app).post('/api/v1/auth/login').send({email:'locked@example.test',password})).status).toBe(401);
+  });
+  test('un bloqueo vencido reinicia el contador y permite autenticarse', async () => {
+    await runtime.pool.execute('UPDATE app_users SET failed_attempts=3,locked_until=? WHERE email=?',
+      [new Date(Date.now() - 60000), 'locked@example.test']);
+    expect((await request(app).post('/api/v1/auth/login').send({ email: 'locked@example.test', password: 'incorrect' })).status).toBe(401);
+    const [[user]] = await runtime.pool.execute('SELECT failed_attempts,locked_until FROM app_users WHERE email=?', ['locked@example.test']);
+    expect(user.failed_attempts).toBe(1);
+    expect(user.locked_until).toBeNull();
+    expect((await request(app).post('/api/v1/auth/login').send({ email: 'locked@example.test', password })).status).toBe(200);
+  });
+  test('rechaza una sesión vencida en MySQL', async () => {
+    const agent = request.agent(app);
+    expect((await agent.post('/api/v1/auth/login').send({ email: 'a@example.test', password })).status).toBe(200);
+    await runtime.pool.execute('UPDATE app_sessions SET expires_at=?', [new Date(Date.now() - 60000)]);
+    expect((await agent.get('/api/v1/auth/session')).status).toBe(401);
   });
 });

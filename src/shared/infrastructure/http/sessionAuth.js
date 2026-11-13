@@ -44,9 +44,9 @@ export function createSessionAuth({ pool, appBaseUrl, secure = false }) {
     const token = sessionToken(req);
     if (!token) return unauthorized(res);
     try {
-      const { rows } = await pool.query(`SELECT u.id,u.tenant_id,u.email
+      const [rows] = await pool.execute(`SELECT u.id,u.tenant_id,u.email
         FROM app_sessions s JOIN app_users u ON u.id=s.user_id
-        WHERE s.token_hash=$1 AND s.expires_at>now() AND u.active=true`, [digest(token)]);
+        WHERE s.token_hash=? AND s.expires_at>UTC_TIMESTAMP(3) AND u.active=true`, [digest(token)]);
       if (!rows[0]) return unauthorized(res);
       req.identity = identity(rows[0]);
       next();
@@ -67,34 +67,34 @@ export function createSessionAuth({ pool, appBaseUrl, secure = false }) {
     if (!email || email.length > 254 || typeof password !== 'string' || password.length > 128) return unauthorized(res);
     let tx;
     try {
-      tx = await pool.connect(); await tx.query('BEGIN');
-      const { rows } = await tx.query('SELECT * FROM app_users WHERE email=$1 FOR UPDATE', [email]);
+      tx = await pool.getConnection(); await tx.beginTransaction();
+      const [rows] = await tx.execute('SELECT * FROM app_users WHERE email=? FOR UPDATE', [email]);
       const user = rows[0];
       if (!user || !user.active || (user.locked_until && new Date(user.locked_until) > new Date())) {
-        await tx.query('COMMIT'); return unauthorized(res);
+        await tx.commit(); return unauthorized(res);
       }
       if (!await verifyPassword(password, user.password_hash)) {
-        await tx.query(`UPDATE app_users SET
-          failed_attempts=CASE WHEN locked_until<=now() THEN 1 ELSE failed_attempts+1 END,
-          locked_until=CASE WHEN locked_until<=now() THEN NULL
-            WHEN failed_attempts+1>=3 THEN now()+interval '15 minutes' ELSE locked_until END
-          WHERE id=$1`, [user.id]);
-        await tx.query('COMMIT'); return unauthorized(res);
+        const expired = user.locked_until && new Date(user.locked_until) <= new Date();
+        const attempts = expired ? 1 : user.failed_attempts + 1;
+        const lockedUntil = attempts >= 3 ? new Date(Date.now() + 15 * 60 * 1000) : null;
+        await tx.execute('UPDATE app_users SET failed_attempts=?,locked_until=? WHERE id=?',
+          [attempts, lockedUntil, user.id]);
+        await tx.commit(); return unauthorized(res);
       }
-      await tx.query('UPDATE app_users SET failed_attempts=0,locked_until=NULL WHERE id=$1', [user.id]);
-      await tx.query('DELETE FROM app_sessions WHERE expires_at<=now()');
+      await tx.execute('UPDATE app_users SET failed_attempts=0,locked_until=NULL WHERE id=?', [user.id]);
+      await tx.execute('DELETE FROM app_sessions WHERE expires_at<=UTC_TIMESTAMP(3)');
       const token = randomBytes(32).toString('hex');
-      await tx.query('INSERT INTO app_sessions(token_hash,user_id,expires_at) VALUES($1,$2,$3)',
+      await tx.execute('INSERT INTO app_sessions(token_hash,user_id,expires_at) VALUES(?,?,?)',
         [digest(token), user.id, new Date(Date.now() + lifetime)]);
-      await tx.query('COMMIT');
+      await tx.commit();
       res.cookie(cookieName, token, options).json({ identity: identity(user) });
-    } catch { if (tx) await tx.query('ROLLBACK').catch(() => {}); return unavailable(res); }
+    } catch { if (tx) await tx.rollback().catch(() => {}); return unavailable(res); }
     finally { tx?.release(); }
   });
   router.get('/session', authenticate, (req, res) => res.json({ identity: req.identity }));
   router.post('/logout', async (req, res) => {
     const token = sessionToken(req);
-    try { if (pool && token) await pool.query('DELETE FROM app_sessions WHERE token_hash=$1', [digest(token)]); }
+    try { if (pool && token) await pool.execute('DELETE FROM app_sessions WHERE token_hash=?', [digest(token)]); }
     catch { return unavailable(res); }
     res.clearCookie(cookieName, { ...options, maxAge: undefined }).status(204).end();
   });

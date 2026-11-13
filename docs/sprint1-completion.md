@@ -12,7 +12,7 @@ APP_BASE_URL=http://localhost:4173 en la plataforma. La SPA y su proxy sirven de
 No existe contraseña predeterminada. La primera visita y el primer inicio de sesión necesitan conexión. Después de cargar la aplicación, IndexedDB conserva capturas al recargar sin red. No borrar los datos del navegador mientras haya pendientes. En equipos compartidos, los datos locales permanecen en el perfil del navegador; cerrar sesión no borra capturas.
 
 ## Decisión de autenticación
-El servidor valida una sesión opaca en cookie HttpOnly, SameSite=Strict, Secure en producción, con vencimiento a 8 horas. PostgreSQL almacena únicamente el hash del token; contraseñas con scrypt y salt aleatorio. Tres fallos bloquean la cuenta durante 15 minutos. Se rechazan escrituras de otro origen.
+El servidor valida una sesión opaca en cookie HttpOnly, SameSite=Strict, Secure en producción, con vencimiento a 8 horas. MySQL 8.4 almacena únicamente el hash del token; contraseñas con scrypt y salt aleatorio. Tres fallos bloquean la cuenta durante 15 minutos. Se rechazan escrituras de otro origen.
 El tenant se obtiene de la sesión, nunca de un campo enviado por el navegador. La identidad local solo permite captura offline; cada envío vuelve a autorizarse en el servidor. Esto habilita Sprint 1; administración de usuarios, roles y un eventual JWT siguen siendo trabajo separado.
 
 ## Matriz de aceptación
@@ -24,8 +24,8 @@ El tenant se obtiene de la sesión, nunca de un campo enviado por el navegador. 
 | US16 | Inbox/outbox transaccional, replay sin duplicar, conflicto visible | Idempotency, InboxOutbox, SessionFlow |
 | US17 | PNG con enlace /lots/:id, consulta autenticada, estado cancelado | QrApi, e2e/sprint1 |
 
-`npm test` en eventore-platform y `npm test` en eventore ejecutan las suites. Para incluir PostgreSQL definir TEST_DATABASE_URL apuntando exclusivamente a una base terminada en _test. Sin esa variable las pruebas de BD se omiten: no equivale a aceptación completa.
-El workflow Backend regression ejecuta Jest con PostgreSQL y aplica migraciones dos
+`npm test` en eventore-platform y `npm test` en eventore ejecutan las suites. Para incluir MySQL 8.4 definir TEST_DATABASE_URL apuntando exclusivamente a una base terminada en _test. Sin esa variable las pruebas de BD se omiten: no equivale a aceptación completa.
+El workflow Backend regression ejecuta Jest con MySQL 8.4 y aplica migraciones dos
 veces. Microservices acceptance comprueba Compose. La prueba Chromium con desconexión
 real vive en el [frontend](https://github.com/XTRACTA-EventOre/eventore), cuyo workflow
 obtiene una revisión explícita de la plataforma para la aceptación integrada. Los

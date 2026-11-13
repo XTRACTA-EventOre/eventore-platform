@@ -2,7 +2,7 @@
 
 ## Alcance implementado
 
-El incremento de Sprint 1 se ejecuta en tres procesos: `identity` (cuentas y sesiones), `traceability` (lotes, evidencias, eventos, inbox y outbox) y `gateway` (rutas públicas API). Compose construye las imágenes y ejecuta dos instancias PostgreSQL con volúmenes y credenciales diferentes. Solo el gateway publica un puerto. Cada servicio tiene su propio comando de arranque y puede reiniciarse por separado. El backend reside en eventore-platform y el frontend en [eventore](https://github.com/XTRACTA-EventOre/eventore). Cada contenedor es una unidad de despliegue.
+El incremento de Sprint 1 se ejecuta en tres procesos: `identity` (cuentas y sesiones), `traceability` (lotes, evidencias, eventos, inbox y outbox) y `gateway` (rutas públicas API). Compose construye las imágenes y ejecuta dos instancias MySQL 8.4 con volúmenes y credenciales diferentes. Solo el gateway publica un puerto. Cada servicio tiene su propio comando de arranque y puede reiniciarse por separado. El backend reside en eventore-platform y el frontend en [eventore](https://github.com/XTRACTA-EventOre/eventore). Cada contenedor es una unidad de despliegue.
 
 | Contexto DDD | Datos que escribe | Contrato |
 | --- | --- | --- |
@@ -21,13 +21,16 @@ Trazabilidad no consulta tablas de Identity. En cada petición protegida consult
 
 El QR usa `APP_BASE_URL`; para escanearlo desde otro dispositivo se necesita una URL accesible. En producción, el origen público debe usar HTTPS y el contenedor Identity debe recibir `NODE_ENV=production` para marcar la cookie `Secure`. La terminación TLS, gestión de secretos, copias de seguridad, observabilidad y políticas de red de producción siguen pendientes.
 
-## Migración desde la base única
+## Datos existentes y cambio de motor
 
-La configuración de Compose crea bases vacías. Para trasladar una instalación existente, detener escrituras, respaldar la base original y copiar por separado las tablas de Identity (`app_users`, `app_sessions`) y de Traceability (`mineral_lots`, `origin_evidence`, `trace_events`, `event_inbox`, `event_outbox`) a las bases nuevas. Conservar claves UUID y relaciones internas de cada grupo; no crear claves foráneas entre bases. Verificar recuentos y consultas por tenant antes de cambiar tráfico. El traslado de datos existentes no se automatiza en este PR y no se presenta como ejecutado.
+La configuración vigente usa MySQL 8.4. La instalación crea bases vacías separadas;
+el [procedimiento MySQL](mysql.md) documenta volúmenes nuevos, migraciones, precisión,
+pruebas y los pasos pendientes si hay datos anteriores en PostgreSQL. No se automatiza
+ni se presenta como ejecutado el traslado de esos datos.
 
 ## Verificación
 
-`tests/microservices.test.js` comprueba rutas de gateway, conservación de cookie y QR binario, consulta de sesión remota y rechazo por falta de secreto. `.github/workflows/microservices.yml` arranca Compose y recorre inicio de sesión, registro, consulta, QR y revocación por el puerto público. Ejecutar además `npm test` en cada repositorio por separado. Las suites de PostgreSQL del Sprint 1 requieren `TEST_DATABASE_URL`; si no existe, Jest las omite.
+`tests/microservices.test.js` comprueba rutas de gateway, conservación de cookie y QR binario, consulta de sesión remota y rechazo por falta de secreto. `.github/workflows/microservices.yml` arranca Compose y recorre inicio de sesión, registro, consulta, QR y revocación por el puerto público. Ejecutar además `npm test` en cada repositorio por separado. Las suites de MySQL 8.4 del Sprint 1 requieren `TEST_DATABASE_URL`; si no existe, Jest las omite.
 
 ## Límites actuales
 
