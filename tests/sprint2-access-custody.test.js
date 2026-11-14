@@ -150,7 +150,8 @@ suite('US05, US18 and US19 across independent MySQL services', () => {
     const confirmed = await call('get', `/api/v1/custody/lots/${lot.lotId}`, cookies.carrierA);
     expect(confirmed.status).toBe(200); expect(confirmed.body.pending).toEqual([]);
     expect(confirmed.body.custody).toMatchObject({ operationId: body.operationId, status: 'InTransit' });
-    expect((await call('post', path, cookies.carrierA).send(body)).body).toEqual(confirmed.body.custody);
+    expect(confirmed.body.custody).toMatchObject((await call('post', path, cookies.carrierA).send(body)).body);
+    expect(confirmed.body.custody.currentVersion).toBe(3);
   });
 
   test('US18/US19: cancellation racing acceptance cannot produce both transitions', async () => {
