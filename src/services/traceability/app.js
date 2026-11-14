@@ -24,7 +24,14 @@ export function createTraceabilityApp({ pool, identityUrl, internalSecret, appBa
   const lifecycle = new MySqlLotLifecycle(pool);
   const operational = new MySqlOperationalState(pool);
   const processing = new MySqlProcessingState(pool);
-  const internalOnly = (req, res, next) => req.get('x-internal-secret') === internalSecret ? next() : res.status(403).end();
+  const internalOnly = (req, res, next) => internalSecret && req.get('x-internal-secret') === internalSecret ? next() : res.status(403).end();
+  app.post('/internal/lots/:lotId/jewelry-receipt', internalOnly, authenticate, requirePermission('inventory.manage'), async (req,res) => {
+    try { res.json(await operational.execute(operationBody(req,'JewelryReceived'),req.identity.permissions)); } catch(error) { apiError(res,error); }
+  });
+  // Read-only service contract: tenant comes from an authenticated server, never from a public request.
+  app.get('/internal/certification/lots/:lotId', internalOnly, async (req,res) => {
+    try { res.json(await processing.genealogy(uuid(req.get('x-service-tenant')),uuid(req.params.lotId))); } catch(error) { apiError(res,error); }
+  });
   app.post('/internal/lots/:lotId/custody-accept', internalOnly, authenticate, requirePermission('custody.accept'), async (req, res) => {
     try { res.json(await lifecycle.execute(lifecycleCommand(req, 'CustodyAccepted'))); }
     catch (error) { operationError(res, error); }

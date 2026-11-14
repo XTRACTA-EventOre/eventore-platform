@@ -1,7 +1,7 @@
 services:
   identity-db:
     image: mysql:8.4
-    command: ["--default-time-zone=+00:00"]
+    command: ["--default-time-zone=+00:00", "--innodb-buffer-pool-size=64M"]
     environment:
       MYSQL_RANDOM_ROOT_PASSWORD: "yes"
       MYSQL_USER: identity
@@ -16,7 +16,7 @@ services:
       start_period: 20s
   traceability-db:
     image: mysql:8.4
-    command: ["--default-time-zone=+00:00"]
+    command: ["--default-time-zone=+00:00", "--innodb-buffer-pool-size=64M"]
     environment:
       MYSQL_RANDOM_ROOT_PASSWORD: "yes"
       MYSQL_USER: traceability
@@ -31,7 +31,7 @@ services:
       start_period: 20s
   logistics-db:
     image: mysql:8.4
-    command: ["--default-time-zone=+00:00"]
+    command: ["--default-time-zone=+00:00", "--innodb-buffer-pool-size=64M"]
     environment:
       MYSQL_RANDOM_ROOT_PASSWORD: "yes"
       MYSQL_USER: logistics
@@ -53,7 +53,7 @@ services:
       logistics-db: { condition: service_healthy }
   processing-db:
     image: mysql:8.4
-    command: ["--default-time-zone=+00:00"]
+    command: ["--default-time-zone=+00:00", "--innodb-buffer-pool-size=64M"]
     environment:
       MYSQL_RANDOM_ROOT_PASSWORD: "yes"
       MYSQL_USER: processing
@@ -73,6 +73,78 @@ services:
       DATABASE_URL: mysql://processing:${PROCESSING_DB_PASSWORD}@processing-db:3306/processing
     depends_on:
       processing-db: { condition: service_healthy }
+  jewelry-db:
+    image: mysql:8.4
+    command: ["--default-time-zone=+00:00", "--innodb-buffer-pool-size=64M"]
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_USER: jewelry
+      MYSQL_PASSWORD: ${JEWELRY_DB_PASSWORD:?set JEWELRY_DB_PASSWORD}
+      MYSQL_DATABASE: jewelry
+    volumes: [jewelry-mysql-data:/var/lib/mysql]
+    healthcheck:
+      test: ["CMD-SHELL", 'MYSQL_PWD="$$MYSQL_PASSWORD" mysql --protocol=TCP -h 127.0.0.1 -u jewelry -D jewelry -e "SELECT 1"']
+      interval: 5s
+      retries: 30
+      timeout: 5s
+      start_period: 20s
+  jewelry-migrate:
+    build: { context: ., dockerfile: Dockerfile }
+    command: ["node", "scripts/migrate-service.js", "jewelry"]
+    environment:
+      DATABASE_URL: mysql://jewelry:${JEWELRY_DB_PASSWORD}@jewelry-db:3306/jewelry
+    depends_on:
+      jewelry-db: { condition: service_healthy }
+  jewelry:
+    build: { context: ., dockerfile: Dockerfile }
+    command: ["node", "src/services/jewelry/server.js"]
+    environment:
+      DATABASE_URL: mysql://jewelry:${JEWELRY_DB_PASSWORD}@jewelry-db:3306/jewelry
+      IDENTITY_URL: http://identity:3001
+      TRACEABILITY_URL: http://traceability:3002
+      JEWELRY_URL: http://jewelry:3005
+      INTERNAL_AUTH_SECRET: ${INTERNAL_AUTH_SECRET:?set INTERNAL_AUTH_SECRET}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
+      PORT: 3005
+    depends_on:
+      jewelry-migrate: { condition: service_completed_successfully }
+      traceability: { condition: service_started }
+  certification-db:
+    image: mysql:8.4
+    command: ["--default-time-zone=+00:00", "--innodb-buffer-pool-size=64M"]
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_USER: certification
+      MYSQL_PASSWORD: ${CERTIFICATION_DB_PASSWORD:?set CERTIFICATION_DB_PASSWORD}
+      MYSQL_DATABASE: certification
+    volumes: [certification-mysql-data:/var/lib/mysql]
+    healthcheck:
+      test: ["CMD-SHELL", 'MYSQL_PWD="$$MYSQL_PASSWORD" mysql --protocol=TCP -h 127.0.0.1 -u certification -D certification -e "SELECT 1"']
+      interval: 5s
+      retries: 30
+      timeout: 5s
+      start_period: 20s
+  certification-migrate:
+    build: { context: ., dockerfile: Dockerfile }
+    command: ["node", "scripts/migrate-service.js", "certification"]
+    environment:
+      DATABASE_URL: mysql://certification:${CERTIFICATION_DB_PASSWORD}@certification-db:3306/certification
+    depends_on:
+      certification-db: { condition: service_healthy }
+  certification:
+    build: { context: ., dockerfile: Dockerfile }
+    command: ["node", "src/services/certification/server.js"]
+    environment:
+      DATABASE_URL: mysql://certification:${CERTIFICATION_DB_PASSWORD}@certification-db:3306/certification
+      IDENTITY_URL: http://identity:3001
+      TRACEABILITY_URL: http://traceability:3002
+      JEWELRY_URL: http://jewelry:3005
+      INTERNAL_AUTH_SECRET: ${INTERNAL_AUTH_SECRET:?set INTERNAL_AUTH_SECRET}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
+      PORT: 3006
+    depends_on:
+      certification-migrate: { condition: service_completed_successfully }
+      traceability: { condition: service_started }
   identity-migrate:
     build: { context: ., dockerfile: Dockerfile }
     command: ["node", "scripts/migrate-service.js", "identity"]
@@ -145,12 +217,16 @@ services:
       TRACEABILITY_URL: http://traceability:3002
       LOGISTICS_URL: http://logistics:3003
       PROCESSING_URL: http://processing:3004
+      JEWELRY_URL: http://jewelry:3005
+      CERTIFICATION_URL: http://certification:3006
       PORT: 3000
     ports: ["3000:3000"]
     depends_on:
       identity: { condition: service_started }
       traceability: { condition: service_started }
 volumes:
+  jewelry-mysql-data:
+  certification-mysql-data:
   processing-mysql-data:
   logistics-mysql-data:
   identity-mysql-data:

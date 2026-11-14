@@ -10,6 +10,8 @@ jobs:
     timeout-minutes: 20
     env:
       IDENTITY_DB_PASSWORD: local-ci-identity-password
+      JEWELRY_DB_PASSWORD: local-ci-jewelry-password
+      CERTIFICATION_DB_PASSWORD: local-ci-certification-password
       PROCESSING_DB_PASSWORD: local-ci-processing-password
       LOGISTICS_DB_PASSWORD: local-ci-logistics-password
       TRACEABILITY_DB_PASSWORD: local-ci-traceability-password

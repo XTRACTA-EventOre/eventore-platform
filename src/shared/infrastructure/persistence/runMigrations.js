@@ -5,7 +5,9 @@ export const migrationSets = {
   identity: ['identity/003_sessions.sql', 'identity/004_roles.sql', 'identity/005_catalog.js'],
   traceability: ['lots/001_register_lots.sql', 'messaging/002_inbox_outbox.sql', 'lots/005_lifecycle.sql', 'lots/006_status.js', 'lots/007_delegations.sql', 'lots/008_states.js', 'lots/009_processing.sql'],
   logistics: ['logistics/001_custody.sql', 'logistics/002_shipments.sql'],
-  processing: ['processing/001_processing.sql']
+  processing: ['processing/001_processing.sql'],
+  jewelry: ['jewelry/001_inventory.sql'],
+  certification: ['certification/001_certificates.sql']
 };
 
 export async function runMigrations(pool, names) {

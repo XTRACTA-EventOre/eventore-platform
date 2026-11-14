@@ -88,6 +88,12 @@ export class MySqlOperationalState {
         if (!['Release','Maintain'].includes(command.decision)) throw new OperationError(400, 'INVALID_DECISION', 'Selecciona liberar o mantener la restricción');
         result.reason = text(command.reason, 'Motivo de revisión'); result.restrictionId = restrictionId; result.decision = command.decision;
         if (command.decision === 'Release') await tx.execute('UPDATE lot_restrictions SET active=false WHERE id=?', [restrictionId]);
+      } else if (action === 'JewelryReceived') {
+        if (state.status !== 'Processed') throw new OperationError(409, 'INVALID_LOT_STATE', 'Solo puede recibirse un lote procesado');
+        transferable();
+        result.status = 'AtJewelry'; result.custodianUserId = actorId;
+        result.weight = state.weight; result.weightUnit = state.weightUnit; result.mineralType = state.mineralType;
+        result.originEvidenceStatus = state.originEvidenceStatus;
       } else if (action === 'EvidenceReviewed') {
         if (!['Verified','Rejected'].includes(command.reviewStatus)) throw new OperationError(400, 'INVALID_DECISION', 'Selecciona el resultado de revisión');
         result.reason = text(command.reason, 'Motivo de revisión'); result.reviewStatus = command.reviewStatus;

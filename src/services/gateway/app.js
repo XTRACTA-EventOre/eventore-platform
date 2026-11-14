@@ -1,6 +1,6 @@
 import express from 'express';
 
-export function createGatewayApp({ identityUrl, traceabilityUrl, logisticsUrl, processingUrl, fetchImpl = fetch, appBaseUrl = 'http://localhost:5173' }) {
+export function createGatewayApp({ identityUrl, traceabilityUrl, logisticsUrl, processingUrl, jewelryUrl, certificationUrl, fetchImpl = fetch, appBaseUrl = 'http://localhost:5173' }) {
   if (!identityUrl || !traceabilityUrl) throw new Error('Configura IDENTITY_URL y TRACEABILITY_URL');
   const app = express();
   app.disable('x-powered-by');
@@ -47,6 +47,8 @@ export function createGatewayApp({ identityUrl, traceabilityUrl, logisticsUrl, p
   app.use('/api/v1/auth', proxy(identityUrl));
   app.use(['/api/v1/custody','/api/v1/shipments'], proxy(logisticsUrl));
   app.use('/api/v1/processing',proxy(processingUrl));
+  app.use('/api/v1/jewelry',proxy(jewelryUrl));
+  app.use(['/api/v1/certificates','/api/v1/public/certificates'],proxy(certificationUrl));
   app.use(['/api/v1/lots', '/api/v1/events'], proxy(traceabilityUrl));
   app.use(['/api/v1/openapi.json', '/api/v1/traceability/openapi.json', '/api/docs'], proxy(traceabilityUrl));
   app.use('/api', (_req, res) => res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Endpoint inexistente' } }));

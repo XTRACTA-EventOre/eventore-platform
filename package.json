@@ -20,7 +20,11 @@
     "user:roles": "node scripts/set-user-roles.js",
     "smoke:sprint2": "node scripts/smoke-sprint2.js",
     "start:processing": "node src/services/processing/server.js",
-    "migrate:processing": "node scripts/migrate-service.js processing"
+    "migrate:processing": "node scripts/migrate-service.js processing",
+    "start:jewelry": "node src/services/jewelry/server.js",
+    "migrate:jewelry": "node scripts/migrate-service.js jewelry",
+    "start:certification": "node src/services/certification/server.js",
+    "migrate:certification": "node scripts/migrate-service.js certification"
   },
   "keywords": [],
   "author": "",
@@ -30,6 +34,7 @@
     "dotenv": "^18.0.6",
     "express": "^5.2.1",
     "mysql2": "^3.24.6",
+    "pdfkit": "0.17.2",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {
