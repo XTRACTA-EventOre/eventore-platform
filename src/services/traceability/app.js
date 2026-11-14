@@ -1,3 +1,6 @@
+import { GeofenceService } from './GeofenceService.js';
+import { reportingSource } from './ReportingSource.js';
+import { uuid as commandUuid, text, version } from '../../shared/infrastructure/http/operationHttp.js';
 import { MySqlLotLifecycle } from '../../contexts/traceability/infrastructure/persistence/lots/MySqlLotLifecycle.js';
 import { lifecycleCommand, operationError } from '../../contexts/traceability/infrastructure/http/lifecycle.routes.js';
 import { LifecycleError } from '../../contexts/traceability/domain/services/LotLifecyclePolicy.js';
@@ -25,6 +28,7 @@ export function createTraceabilityApp({ pool, identityUrl, internalSecret, appBa
   const operational = new MySqlOperationalState(pool);
   const processing = new MySqlProcessingState(pool);
   const internalOnly = (req, res, next) => internalSecret && req.get('x-internal-secret') === internalSecret ? next() : res.status(403).end();
+  app.get('/internal/reporting/source',internalOnly,async(req,res)=>{try{res.json(await reportingSource(pool,uuid(req.get('x-service-tenant')),req.query));}catch(error){apiError(res,error);}});
   app.post('/internal/lots/:lotId/jewelry-receipt', internalOnly, authenticate, requirePermission('inventory.manage'), async (req,res) => {
     try { res.json(await operational.execute(operationBody(req,'JewelryReceived'),req.identity.permissions)); } catch(error) { apiError(res,error); }
   });
@@ -48,6 +52,12 @@ export function createTraceabilityApp({ pool, identityUrl, internalSecret, appBa
     try { res.json(await operational.find(req.identity.tenantId, uuid(req.params.operationId))); }
     catch (error) { apiError(res, error); }
   });
+  const geofences=new GeofenceService(pool);
+  const geoHandle=fn=>async(req,res)=>{try{res.json(await fn(req));}catch(error){apiError(res,error);}};
+  app.get('/api/v1/geofences',authenticate,requirePermission('lots.read'),geoHandle(async req=>({concessions:await geofences.list(req.identity.tenantId)})));
+  app.post('/api/v1/geofences',authenticate,requirePermission('geofences.manage'),geoHandle(req=>geofences.register({tenantId:req.identity.tenantId,actorId:req.identity.userId,operationId:uuid(req.body?.operationId),action:'ConcessionAuthorized',name:req.body?.name,polygon:req.body?.polygon,source:req.body?.source,authorizationRef:req.body?.authorizationRef,confirmAuthorization:req.body?.confirmAuthorization===true})));
+  app.get('/api/v1/lots/:lotId/geofence',authenticate,requirePermission('lots.read'),geoHandle(req=>geofences.read(req.identity.tenantId,uuid(req.params.lotId))));
+  app.post('/api/v1/lots/:lotId/geofence',authenticate,requirePermission('evidence.review'),geoHandle(req=>geofences.check({...operationBody(req,'LocationChecked'),location:req.body?.location??null,concessionId:req.body?.concessionId??null,reason:req.body?.reason})));
   const actionPermissions = { CheckpointRecorded: 'shipments.checkpoint', IncidentReported: 'shipments.report',
     DelegationProposed: 'shipments.delegate', DelegationAccepted: 'custody.accept', PlantReceived: 'shipments.receive',
     RestrictionReviewed: 'shipments.review', EvidenceReviewed: 'evidence.review' };

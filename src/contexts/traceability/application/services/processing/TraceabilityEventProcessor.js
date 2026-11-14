@@ -42,7 +42,7 @@ export class TraceabilityEventProcessor {
         outcome = { status: 'Rejected',reason: error.code };
       }
       if (lot) {
-        await this.lotStore.save({ tx,lot });
+        await this.lotStore.save({ tx,lot,locationDeclaration: incoming.payload.location || incoming.payload.concessionId ? {location: incoming.payload.location??null,concessionId: incoming.payload.concessionId??null,status:'PendingCheck'} : null });
         outcome = { status: 'Accepted',lotId: lot.id,reason: null };
         await this.journal.appendOutbox({ tx,envelope: incoming,
           lotId: lot.id,messageId: this.uuid() });

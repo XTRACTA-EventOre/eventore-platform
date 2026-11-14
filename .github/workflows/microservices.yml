@@ -12,6 +12,8 @@ jobs:
       IDENTITY_DB_PASSWORD: local-ci-identity-password
       JEWELRY_DB_PASSWORD: local-ci-jewelry-password
       CERTIFICATION_DB_PASSWORD: local-ci-certification-password
+      DEVICES_DB_PASSWORD: local-ci-devices-password
+      REPORTING_DB_PASSWORD: local-ci-reporting-password
       PROCESSING_DB_PASSWORD: local-ci-processing-password
       LOGISTICS_DB_PASSWORD: local-ci-logistics-password
       TRACEABILITY_DB_PASSWORD: local-ci-traceability-password

@@ -21,7 +21,7 @@ export class MySqlUnitOfWork {
 
 export class MySqlLotStore {
   constructor(pool) { this.pool = pool; }
-  async save({ tx, lot }) {
+  async save({ tx, lot, locationDeclaration }) {
     const d = lot.toPrimitives();
     await tx.execute(`INSERT INTO mineral_lots
       (id,tenant_id,mineral_type,weight,weight_unit,status,version,created_at)
@@ -40,6 +40,7 @@ export class MySqlLotStore {
       [event.id,d.tenantId,d.id,event.clientEventId,event.sourceId,
         event.eventType,toSqlTimestamp(event.occurredAt),JSON.stringify(event.payload)]);
     }
+    if (locationDeclaration) await tx.execute('INSERT INTO lot_capture_locations(tenant_id,lot_id,declaration) VALUES(?,?,?)',[d.tenantId,d.id,JSON.stringify(locationDeclaration)]);
   }
   async findById({ lotId, tenantId }) {
     const [rows] = await this.pool.execute(`SELECT

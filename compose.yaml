@@ -145,6 +145,76 @@ services:
     depends_on:
       certification-migrate: { condition: service_completed_successfully }
       traceability: { condition: service_started }
+  devices-db:
+    image: mysql:8.4
+    command: ["--default-time-zone=+00:00", "--innodb-buffer-pool-size=64M"]
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_USER: devices
+      MYSQL_PASSWORD: ${DEVICES_DB_PASSWORD:?set DEVICES_DB_PASSWORD}
+      MYSQL_DATABASE: devices
+    volumes: [devices-mysql-data:/var/lib/mysql]
+    healthcheck:
+      test: ["CMD-SHELL", 'MYSQL_PWD="$$MYSQL_PASSWORD" mysql --protocol=TCP -h 127.0.0.1 -u devices -D devices -e "SELECT 1"']
+      interval: 5s
+      retries: 30
+      timeout: 5s
+      start_period: 20s
+  devices-migrate:
+    build: { context: ., dockerfile: Dockerfile }
+    command: ["node", "scripts/migrate-service.js", "devices"]
+    environment:
+      DATABASE_URL: mysql://devices:${DEVICES_DB_PASSWORD}@devices-db:3306/devices
+    depends_on:
+      devices-db: { condition: service_healthy }
+  devices:
+    build: { context: ., dockerfile: Dockerfile }
+    command: ["node", "src/services/devices/server.js"]
+    environment:
+      DATABASE_URL: mysql://devices:${DEVICES_DB_PASSWORD}@devices-db:3306/devices
+      IDENTITY_URL: http://identity:3001
+      TRACEABILITY_URL: http://traceability:3002
+      INTERNAL_AUTH_SECRET: ${INTERNAL_AUTH_SECRET:?set INTERNAL_AUTH_SECRET}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
+      PORT: 3007
+    depends_on:
+      devices-migrate: { condition: service_completed_successfully }
+      traceability: { condition: service_started }
+  reporting-db:
+    image: mysql:8.4
+    command: ["--default-time-zone=+00:00", "--innodb-buffer-pool-size=64M"]
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_USER: reporting
+      MYSQL_PASSWORD: ${REPORTING_DB_PASSWORD:?set REPORTING_DB_PASSWORD}
+      MYSQL_DATABASE: reporting
+    volumes: [reporting-mysql-data:/var/lib/mysql]
+    healthcheck:
+      test: ["CMD-SHELL", 'MYSQL_PWD="$$MYSQL_PASSWORD" mysql --protocol=TCP -h 127.0.0.1 -u reporting -D reporting -e "SELECT 1"']
+      interval: 5s
+      retries: 30
+      timeout: 5s
+      start_period: 20s
+  reporting-migrate:
+    build: { context: ., dockerfile: Dockerfile }
+    command: ["node", "scripts/migrate-service.js", "reporting"]
+    environment:
+      DATABASE_URL: mysql://reporting:${REPORTING_DB_PASSWORD}@reporting-db:3306/reporting
+    depends_on:
+      reporting-db: { condition: service_healthy }
+  reporting:
+    build: { context: ., dockerfile: Dockerfile }
+    command: ["node", "src/services/reporting/server.js"]
+    environment:
+      DATABASE_URL: mysql://reporting:${REPORTING_DB_PASSWORD}@reporting-db:3306/reporting
+      IDENTITY_URL: http://identity:3001
+      TRACEABILITY_URL: http://traceability:3002
+      INTERNAL_AUTH_SECRET: ${INTERNAL_AUTH_SECRET:?set INTERNAL_AUTH_SECRET}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
+      PORT: 3008
+    depends_on:
+      reporting-migrate: { condition: service_completed_successfully }
+      traceability: { condition: service_started }
   identity-migrate:
     build: { context: ., dockerfile: Dockerfile }
     command: ["node", "scripts/migrate-service.js", "identity"]
@@ -217,6 +287,8 @@ services:
       TRACEABILITY_URL: http://traceability:3002
       LOGISTICS_URL: http://logistics:3003
       PROCESSING_URL: http://processing:3004
+      DEVICES_URL: http://devices:3007
+      REPORTING_URL: http://reporting:3008
       JEWELRY_URL: http://jewelry:3005
       CERTIFICATION_URL: http://certification:3006
       PORT: 3000
@@ -225,6 +297,8 @@ services:
       identity: { condition: service_started }
       traceability: { condition: service_started }
 volumes:
+  devices-mysql-data:
+  reporting-mysql-data:
   jewelry-mysql-data:
   certification-mysql-data:
   processing-mysql-data:

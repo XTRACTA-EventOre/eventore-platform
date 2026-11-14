@@ -1,6 +1,6 @@
 import express from 'express';
 
-export function createGatewayApp({ identityUrl, traceabilityUrl, logisticsUrl, processingUrl, jewelryUrl, certificationUrl, fetchImpl = fetch, appBaseUrl = 'http://localhost:5173' }) {
+export function createGatewayApp({ identityUrl, traceabilityUrl, logisticsUrl, processingUrl, jewelryUrl, certificationUrl, devicesUrl, reportingUrl, fetchImpl = fetch, appBaseUrl = 'http://localhost:5173' }) {
   if (!identityUrl || !traceabilityUrl) throw new Error('Configura IDENTITY_URL y TRACEABILITY_URL');
   const app = express();
   app.disable('x-powered-by');
@@ -17,7 +17,7 @@ export function createGatewayApp({ identityUrl, traceabilityUrl, logisticsUrl, p
     }
     if (req.method === 'OPTIONS') {
       res.set('Access-Control-Allow-Methods', 'GET, HEAD, POST, PUT, OPTIONS');
-      res.set('Access-Control-Allow-Headers', 'Content-Type');
+      res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
       return res.status(204).end();
     }
     next();
@@ -27,7 +27,7 @@ export function createGatewayApp({ identityUrl, traceabilityUrl, logisticsUrl, p
     try {
       const url = new URL(req.originalUrl, target);
       const headers = {};
-      for (const name of ['content-type', 'cookie', 'origin', 'accept']) {
+      for (const name of ['content-type', 'cookie', 'origin', 'accept', 'authorization']) {
         if (req.headers[name]) headers[name] = req.headers[name];
       }
       const body = ['GET', 'HEAD'].includes(req.method) ? undefined : req;
@@ -47,9 +47,11 @@ export function createGatewayApp({ identityUrl, traceabilityUrl, logisticsUrl, p
   app.use('/api/v1/auth', proxy(identityUrl));
   app.use(['/api/v1/custody','/api/v1/shipments'], proxy(logisticsUrl));
   app.use('/api/v1/processing',proxy(processingUrl));
+  app.use('/api/v1/devices',proxy(devicesUrl));
+  app.use('/api/v1/reporting',proxy(reportingUrl));
   app.use('/api/v1/jewelry',proxy(jewelryUrl));
   app.use(['/api/v1/certificates','/api/v1/public/certificates'],proxy(certificationUrl));
-  app.use(['/api/v1/lots', '/api/v1/events'], proxy(traceabilityUrl));
+  app.use(['/api/v1/lots', '/api/v1/events', '/api/v1/geofences'], proxy(traceabilityUrl));
   app.use(['/api/v1/openapi.json', '/api/v1/traceability/openapi.json', '/api/docs'], proxy(traceabilityUrl));
   app.use('/api', (_req, res) => res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Endpoint inexistente' } }));
   return app;

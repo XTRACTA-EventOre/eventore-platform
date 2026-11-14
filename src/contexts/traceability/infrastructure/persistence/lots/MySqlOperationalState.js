@@ -96,6 +96,12 @@ export class MySqlOperationalState {
         result.originEvidenceStatus = state.originEvidenceStatus;
       } else if (action === 'EvidenceReviewed') {
         if (!['Verified','Rejected'].includes(command.reviewStatus)) throw new OperationError(400, 'INVALID_DECISION', 'Selecciona el resultado de revisión');
+        if (command.reviewStatus==='Verified') {
+          const [geoRows]=await tx.execute('SELECT result FROM lot_location_checks WHERE tenant_id=? AND lot_id=?',[tenantId,lotId]);
+          const latest=geoRows.map(r=>r.result).sort((a,b)=>b.version-a.version)[0];
+          const [[capture]]=await tx.execute('SELECT declaration FROM lot_capture_locations WHERE tenant_id=? AND lot_id=?',[tenantId,lotId]);
+          if ((latest&&latest.status!=='Inside')||(!latest&&capture)) throw new OperationError(409,'GEOFENCE_NOT_CONFIRMED','La ubicación declarada requiere una comprobación favorable de la concesión antes de aprobar el origen');
+        }
         result.reason = text(command.reason, 'Motivo de revisión'); result.reviewStatus = command.reviewStatus;
         await tx.execute('UPDATE origin_evidence SET review_status=? WHERE tenant_id=? AND lot_id=?', [command.reviewStatus, tenantId, lotId]);
       } else throw new OperationError(400, 'INVALID_ACTION', 'Operación no reconocida');

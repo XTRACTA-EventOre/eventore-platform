@@ -24,7 +24,11 @@
     "start:jewelry": "node src/services/jewelry/server.js",
     "migrate:jewelry": "node scripts/migrate-service.js jewelry",
     "start:certification": "node src/services/certification/server.js",
-    "migrate:certification": "node scripts/migrate-service.js certification"
+    "migrate:certification": "node scripts/migrate-service.js certification",
+    "start:devices": "node src/services/devices/server.js",
+    "migrate:devices": "node scripts/migrate-service.js devices",
+    "start:reporting": "node src/services/reporting/server.js",
+    "migrate:reporting": "node scripts/migrate-service.js reporting"
   },
   "keywords": [],
   "author": "",

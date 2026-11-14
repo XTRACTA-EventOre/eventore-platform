@@ -15,10 +15,10 @@ export function createRegistrationRouter({ processor,getMineralLotDetails,authen
         try {
             const tenantId = assertUuid(identity.tenantId,'tenantId').toLowerCase();
             const clientEventId = assertUuid(req.body?.clientEventId,'clientEventId');
-            const { mineralType,weight,weightUnit,originEvidence } = req.body ?? {};
+            const { mineralType,weight,weightUnit,originEvidence,location,concessionId } = req.body ?? {};
             const outcome = await processor.register({ tenantId,
                 actorId: identity.userId,clientEventId,
-                payload: JSON.parse(JSON.stringify({ mineralType,weight,weightUnit,originEvidence })) });
+                payload: JSON.parse(JSON.stringify({ mineralType,weight,weightUnit,originEvidence,location,concessionId })) });
             if (['Accepted','AlreadyProcessed'].includes(outcome.status)) {
                 const current = outcome.status === 'AlreadyProcessed'
                     ? await getMineralLotDetails.execute({ lotId: outcome.lotId,tenantId }) : null;
