@@ -9,9 +9,11 @@
   }
   handle {
     root * /srv
-    @uncached path /index.html /sw.js
-    header @uncached Cache-Control "no-cache"
-    try_files {path} /index.html
-    file_server
+    route {
+      try_files {path} /index.html
+      @uncached path /index.html /sw.js
+      header @uncached Cache-Control "no-cache"
+      file_server
+    }
   }
 }

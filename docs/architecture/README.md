@@ -7,3 +7,5 @@ Las figuras PNG/SVG se generan desde `scripts/render-architecture.py` usando Pil
 - Datos: [Identity](data-identity.png), [Traceability](data-traceability.png), [Logistics](data-logistics.png), [Processing](data-processing.png), [Jewelry](data-jewelry.png), [Certification](data-certification.png), [Devices](data-devices.png), [Reporting](data-reporting.png).
 
 El modelo anterior del informe, con PostgreSQL, broker propuesto y backend modular, corresponde a una etapa histórica de diseño. El incremento actual usa MySQL, comunicación HTTP y el agregado autoritativo de Traceability; no se presenta el broker ni la autonomía completa de modelos como implementados. Ver [decisiones y límites](../microservices.md).
+
+El CLI oficial de Structurizr valida workspace.dsl en el workflow Microservices acceptance. La ejecución verificada está enlazada en [evidence.md](../avance4/evidence.md).
