@@ -69,14 +69,14 @@ export function createSessionAuth({ pool, appBaseUrl, secure = false }) {
     if (!pool) return unavailable(res);
     const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
     const password = req.body?.password;
-    if (!email || email.length > 254 || typeof password !== 'string' || password.length > 128) return unauthorized(res);
+    if (!email || email.length > 254 || typeof password !== 'string' || password.length > 128) return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'No se pudo iniciar sesión. Comprueba tus credenciales; después de tres intentos fallidos espera quince minutos o contacta al administrador para recuperar el acceso.' } });
     let tx;
     try {
       tx = await pool.getConnection(); await tx.beginTransaction();
       const [rows] = await tx.execute('SELECT * FROM app_users WHERE email=? FOR UPDATE', [email]);
       const user = rows[0];
       if (!user || !user.active || (user.locked_until && new Date(user.locked_until) > new Date())) {
-        await tx.commit(); return unauthorized(res);
+        await tx.commit(); return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'No se pudo iniciar sesión. Comprueba tus credenciales; después de tres intentos fallidos espera quince minutos o contacta al administrador para recuperar el acceso.' } });
       }
       if (!await verifyPassword(password, user.password_hash)) {
         const expired = user.locked_until && new Date(user.locked_until) <= new Date();
@@ -84,7 +84,7 @@ export function createSessionAuth({ pool, appBaseUrl, secure = false }) {
         const lockedUntil = attempts >= 3 ? new Date(Date.now() + 15 * 60 * 1000) : null;
         await tx.execute('UPDATE app_users SET failed_attempts=?,locked_until=? WHERE id=?',
           [attempts, lockedUntil, user.id]);
-        await tx.commit(); return unauthorized(res);
+        await tx.commit(); return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'No se pudo iniciar sesión. Comprueba tus credenciales; después de tres intentos fallidos espera quince minutos o contacta al administrador para recuperar el acceso.' } });
       }
       await tx.execute('UPDATE app_users SET failed_attempts=0,locked_until=NULL WHERE id=?', [user.id]);
       await tx.execute('DELETE FROM app_sessions WHERE expires_at<=UTC_TIMESTAMP(3)');

@@ -1,3 +1,4 @@
+import {fileURLToPath} from 'node:url';
 import express from 'express';
 import { createRemoteAuth } from '../../shared/infrastructure/http/remoteIdentity.js';
 import { createSessionAuth } from '../../shared/infrastructure/http/sessionAuth.js';
@@ -8,6 +9,7 @@ export function createProcessingApp(options){
   const {identityUrl,internalSecret,appBaseUrl,fetchImpl=fetch}=options;
   const app=express();app.disable('x-powered-by');app.use(express.json());app.use(createSessionAuth({pool:null,appBaseUrl}).sameOrigin);
   const authenticate=createRemoteAuth({identityUrl,internalSecret,fetchImpl}),service=new ProcessingService(options);
+ app.get('/api/v1/processing/openapi.json',(_req,res)=>res.sendFile(fileURLToPath(new URL('../../../docs/processing-openapi.json',import.meta.url))));
   app.get('/health',(_req,res)=>res.json({status:'ok',service:'processing'}));
   app.get('/api/v1/processing/lots/:lotId',authenticate,requirePermission('lots.read'),async(req,res)=>{try{res.json(await service.read(req.identity.tenantId,uuid(req.params.lotId),req));}catch(error){apiError(res,error);}});
   app.get('/api/v1/processing/lots/:lotId/genealogy',authenticate,requirePermission('lots.read'),async(req,res)=>{try{res.json(await service.trace.request(`/internal/lots/${uuid(req.params.lotId)}/genealogy`,{req}));}catch(error){apiError(res,error);}});

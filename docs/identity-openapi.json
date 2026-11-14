@@ -2,8 +2,8 @@
   "openapi": "3.0.3",
   "info": {
     "title": "EventOre Identity",
-    "version": "1.1.0",
-    "description": "Identity, Traceability y Logistics. MySQL 8.4, cookie de sesión y permisos verificados por operación."
+    "version": "1.3.0",
+    "description": "Ocho servicios con MySQL 8.4 independiente: Identity, Traceability, Logistics, Processing, Jewelry, Certification, Devices y Reporting. La cookie se obtiene mediante login. Los reportes de dispositivos usan Bearer propio. Los comandos conservan operationId y cuerpo ante fallos sin confirmación. Los ejemplos son datos de prueba, no credenciales."
   },
   "servers": [
     {
@@ -21,6 +21,10 @@
         "type": "apiKey",
         "in": "cookie",
         "name": "eventore_session"
+      },
+      "deviceBearer": {
+        "type": "http",
+        "scheme": "bearer"
       }
     },
     "schemas": {
@@ -64,6 +68,27 @@
                 "type": "string"
               }
             }
+          },
+          "location": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "latitude": {
+                "type": "number",
+                "minimum": -90,
+                "maximum": 90
+              },
+              "longitude": {
+                "type": "number",
+                "minimum": -180,
+                "maximum": 180
+              }
+            }
+          },
+          "concessionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           }
         }
       },

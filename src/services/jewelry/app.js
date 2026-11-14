@@ -1,3 +1,4 @@
+import {fileURLToPath} from 'node:url';
 import express from 'express';
 import { createRemoteAuth } from '../../shared/infrastructure/http/remoteIdentity.js';
 import { createSessionAuth } from '../../shared/infrastructure/http/sessionAuth.js';
@@ -9,6 +10,7 @@ export function createJewelryApp(options){
   app.disable('x-powered-by');app.use(express.json());app.use(createSessionAuth({pool:null,appBaseUrl}).sameOrigin);
   const auth=createRemoteAuth({identityUrl,internalSecret,fetchImpl}),access=requirePermission('inventory.manage');
   const handle=fn=>async(req,res)=>{try{const result=await fn(req);res.json(result);}catch(error){apiError(res,error);}};
+ app.get('/api/v1/jewelry/openapi.json',(_req,res)=>res.sendFile(fileURLToPath(new URL('../../../docs/jewelry-openapi.json',import.meta.url))));
   app.get('/health',(_req,res)=>res.json({status:'ok',service:'jewelry'}));
   app.get('/internal/products/:id',(req,res,next)=>internalSecret&&req.get('x-internal-secret')===internalSecret?next():res.status(403).end(),handle(req=>service.product(uuid(req.get('x-service-tenant')),uuid(req.params.id))));
   app.get('/api/v1/jewelry/inventory',auth,access,handle(async req=>{

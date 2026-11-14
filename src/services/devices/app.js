@@ -1,3 +1,4 @@
+import {fileURLToPath} from 'node:url';
 import express from 'express';
 import {createRemoteAuth} from '../../shared/infrastructure/http/remoteIdentity.js';
 import {createSessionAuth} from '../../shared/infrastructure/http/sessionAuth.js';
@@ -9,6 +10,7 @@ export function createDevicesApp(options){
  app.disable('x-powered-by');app.use(express.json());app.use(createSessionAuth({pool:null,appBaseUrl}).sameOrigin);
  const auth=createRemoteAuth({identityUrl,internalSecret,fetchImpl}),handle=fn=>async(req,res)=>{try{res.set('Cache-Control','no-store');res.json(await fn(req));}catch(error){apiError(res,error);}};
  app.locals.deviceService=service;
+ app.get('/api/v1/devices/openapi.json',(_req,res)=>res.sendFile(fileURLToPath(new URL('../../../docs/devices-openapi.json',import.meta.url))));
  app.get('/health',(_req,res)=>res.json({status:'ok',service:'devices'}));
  app.post('/api/v1/devices/:id/readings',handle(req=>service.ingest(uuid(req.params.id),/^Bearer (\S+)$/.exec(req.get('authorization')??'')?.[1],req.body??{})));
  app.get('/api/v1/devices',auth,requirePermission('lots.read'),handle(async req=>{await service.evaluate(req.identity.tenantId);return {devices:await service.list(req.identity.tenantId)};}));

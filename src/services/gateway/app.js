@@ -52,7 +52,7 @@ export function createGatewayApp({ identityUrl, traceabilityUrl, logisticsUrl, p
   app.use('/api/v1/jewelry',proxy(jewelryUrl));
   app.use(['/api/v1/certificates','/api/v1/public/certificates'],proxy(certificationUrl));
   app.use(['/api/v1/lots', '/api/v1/events', '/api/v1/geofences'], proxy(traceabilityUrl));
-  app.use(['/api/v1/openapi.json', '/api/v1/traceability/openapi.json', '/api/docs'], proxy(traceabilityUrl));
+  app.use(['/api/v1/openapi.json', '/api/v1/traceability/openapi.json', '/api/docs','/api/docs-assets'], proxy(traceabilityUrl));
   app.use('/api', (_req, res) => res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Endpoint inexistente' } }));
   return app;
 }

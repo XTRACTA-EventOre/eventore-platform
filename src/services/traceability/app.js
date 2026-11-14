@@ -1,6 +1,7 @@
+import express from 'express';
+import swaggerUiDist from 'swagger-ui-dist';
 import { GeofenceService } from './GeofenceService.js';
 import { reportingSource } from './ReportingSource.js';
-import { uuid as commandUuid, text, version } from '../../shared/infrastructure/http/operationHttp.js';
 import { MySqlLotLifecycle } from '../../contexts/traceability/infrastructure/persistence/lots/MySqlLotLifecycle.js';
 import { lifecycleCommand, operationError } from '../../contexts/traceability/infrastructure/http/lifecycle.routes.js';
 import { LifecycleError } from '../../contexts/traceability/domain/services/LotLifecyclePolicy.js';
@@ -90,6 +91,7 @@ export function createTraceabilityApp({ pool, identityUrl, internalSecret, appBa
   });
   app.get('/api/v1/openapi.json', (_req, res) => res.sendFile(fileURLToPath(new URL('../../../docs/openapi.json', import.meta.url))));
   app.get('/api/v1/traceability/openapi.json', (_req, res) => res.sendFile(fileURLToPath(new URL('../../../docs/traceability-openapi.json', import.meta.url))));
-  app.get('/api/docs', (_req, res) => res.type('html').send('<!doctype html><title>EventOre API</title><div id="swagger-ui"></div><link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css"><script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js"></script><script>SwaggerUIBundle({url:"/api/v1/openapi.json",dom_id:"#swagger-ui"})</script>'));
+  app.use('/api/docs-assets',express.static(swaggerUiDist.getAbsoluteFSPath(),{index:false}));
+  app.get('/api/docs',(_req,res)=>res.type('html').send('<!doctype html><html lang="es"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>EventOre API Avance 4</title><div id="swagger-ui"></div><link rel="stylesheet" href="/api/docs-assets/swagger-ui.css"><script src="/api/docs-assets/swagger-ui-bundle.js"></script><script>SwaggerUIBundle({url:"/api/v1/openapi.json",dom_id:"#swagger-ui",withCredentials:true,docExpansion:"list"})</script></html>'));
   return app;
 }
