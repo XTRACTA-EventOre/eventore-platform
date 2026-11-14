@@ -3,16 +3,18 @@ import { isDeepStrictEqual } from 'node:util';
 import { MySqlUnitOfWork } from './MySqlLotStore.js';
 import { OperationError } from '../../../../../shared/application/OperationError.js';
 import { compareCheckpoint } from '../../../../../shared/domain/decimalMass.js';
+import { decimal, formatDecimal } from '../../../../../shared/domain/decimalMass.js';
 import { uuid, text } from '../../../../../shared/infrastructure/http/operationHttp.js';
 
 export class MySqlOperationalState {
   constructor(pool) { this.pool = pool; this.unitOfWork = new MySqlUnitOfWork(pool); }
   async snapshot(tenantId, lotId, db = this.pool) {
     const [[lot]] = await db.execute(`SELECT l.id AS lotId,l.tenant_id AS tenantId,l.status,l.version,l.mineral_type AS mineralType,
-      l.weight,l.weight_unit AS weightUnit,e.review_status AS originEvidenceStatus,e.reference AS evidenceReference
+      l.weight,l.weight_unit AS weightUnit,e.review_status AS originEvidenceStatus,e.reference AS evidenceReference,e.source AS originSource
       FROM mineral_lots l JOIN origin_evidence e ON e.tenant_id=l.tenant_id AND e.lot_id=l.id
       WHERE l.tenant_id=? AND l.id=?`, [tenantId, lotId]);
     if (!lot) throw new OperationError(404, 'LOT_NOT_FOUND', 'Lote no encontrado');
+    lot.weight = formatDecimal(decimal(lot.weight));
     const [rows] = await db.execute('SELECT result FROM lot_lifecycle_events WHERE tenant_id=? AND lot_id=?', [tenantId, lotId]);
     const history = rows.map(row => row.result).sort((a,b) => a.version - b.version);
     const custody = [...history].reverse().find(event => ['CustodyAccepted','DelegationAccepted','PlantReceived'].includes(event.action));

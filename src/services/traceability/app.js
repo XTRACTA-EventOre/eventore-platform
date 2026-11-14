@@ -4,6 +4,7 @@ import { LifecycleError } from '../../contexts/traceability/domain/services/LotL
 import { requirePermission } from '../../shared/infrastructure/http/permissions.js';
 import { MySqlOperationalState } from '../../contexts/traceability/infrastructure/persistence/lots/MySqlOperationalState.js';
 import { operationBody, apiError, uuid } from '../../shared/infrastructure/http/operationHttp.js';
+import { MySqlProcessingState } from '../../contexts/traceability/infrastructure/persistence/lots/MySqlProcessingState.js';
 import { createSprint1App } from '../../contexts/traceability/infrastructure/bootstrap/createSprint1App.js';
 import { createSessionAuth } from '../../shared/infrastructure/http/sessionAuth.js';
 import { createRemoteAuth } from './remoteAuth.js';
@@ -22,6 +23,7 @@ export function createTraceabilityApp({ pool, identityUrl, internalSecret, appBa
   const app = createSprint1App({ pool, authenticate, sameOrigin, appBaseUrl, verifyRecipient });
   const lifecycle = new MySqlLotLifecycle(pool);
   const operational = new MySqlOperationalState(pool);
+  const processing = new MySqlProcessingState(pool);
   const internalOnly = (req, res, next) => req.get('x-internal-secret') === internalSecret ? next() : res.status(403).end();
   app.post('/internal/lots/:lotId/custody-accept', internalOnly, authenticate, requirePermission('custody.accept'), async (req, res) => {
     try { res.json(await lifecycle.execute(lifecycleCommand(req, 'CustodyAccepted'))); }
@@ -56,6 +58,18 @@ export function createTraceabilityApp({ pool, identityUrl, internalSecret, appBa
   app.post('/api/v1/lots/:lotId/evidence-review', authenticate, requirePermission('evidence.review'), async (req, res) => {
     try { res.json(await operational.execute({ ...operationBody(req, 'EvidenceReviewed'), reviewStatus: req.body.reviewStatus, reason: req.body.reason }, req.identity.permissions)); }
     catch (error) { apiError(res, error); }
+  });
+  app.get('/internal/lots/:lotId/processing', internalOnly, authenticate, requirePermission('lots.read'), async (req,res) => {
+    try { res.json(await processing.view(req.identity.tenantId,uuid(req.params.lotId))); } catch(error) { apiError(res,error); }
+  });
+  app.get('/internal/lots/:lotId/genealogy', internalOnly, authenticate, requirePermission('lots.read'), async (req,res) => {
+    try { res.json(await processing.genealogy(req.identity.tenantId,uuid(req.params.lotId))); } catch(error) { apiError(res,error); }
+  });
+  app.post('/internal/lots/:lotId/processing', internalOnly, authenticate, requirePermission('processing.manage'), async (req,res) => {
+    try {
+      const {action,tenantId:_tenant,actorId:_actor,lotId:_lot,operationId:_operation,expectedVersion:_version,...payload}=req.body;
+      res.json(await processing.execute({...operationBody(req,action),...payload}));
+    } catch(error) { apiError(res,error); }
   });
   app.get('/api/v1/openapi.json', (_req, res) => res.sendFile(fileURLToPath(new URL('../../../docs/openapi.json', import.meta.url))));
   app.get('/api/v1/traceability/openapi.json', (_req, res) => res.sendFile(fileURLToPath(new URL('../../../docs/traceability-openapi.json', import.meta.url))));

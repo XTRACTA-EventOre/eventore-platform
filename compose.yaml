@@ -51,6 +51,28 @@ services:
       DATABASE_URL: mysql://logistics:${LOGISTICS_DB_PASSWORD}@logistics-db:3306/logistics
     depends_on:
       logistics-db: { condition: service_healthy }
+  processing-db:
+    image: mysql:8.4
+    command: ["--default-time-zone=+00:00"]
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+      MYSQL_USER: processing
+      MYSQL_PASSWORD: ${PROCESSING_DB_PASSWORD:?set PROCESSING_DB_PASSWORD}
+      MYSQL_DATABASE: processing
+    volumes: [processing-mysql-data:/var/lib/mysql]
+    healthcheck:
+      test: ["CMD-SHELL", 'MYSQL_PWD="$$MYSQL_PASSWORD" mysql --protocol=TCP -h 127.0.0.1 -u processing -D processing -e "SELECT 1"']
+      interval: 5s
+      retries: 30
+      timeout: 5s
+      start_period: 20s
+  processing-migrate:
+    build: { context: ., dockerfile: Dockerfile }
+    command: ["node", "scripts/migrate-service.js", "processing"]
+    environment:
+      DATABASE_URL: mysql://processing:${PROCESSING_DB_PASSWORD}@processing-db:3306/processing
+    depends_on:
+      processing-db: { condition: service_healthy }
   identity-migrate:
     build: { context: ., dockerfile: Dockerfile }
     command: ["node", "scripts/migrate-service.js", "identity"]
@@ -101,6 +123,19 @@ services:
       logistics-migrate: { condition: service_completed_successfully }
       identity: { condition: service_started }
       traceability: { condition: service_started }
+  processing:
+    build: { context: ., dockerfile: Dockerfile }
+    command: ["node", "src/services/processing/server.js"]
+    environment:
+      DATABASE_URL: mysql://processing:${PROCESSING_DB_PASSWORD}@processing-db:3306/processing
+      IDENTITY_URL: http://identity:3001
+      TRACEABILITY_URL: http://traceability:3002
+      INTERNAL_AUTH_SECRET: ${INTERNAL_AUTH_SECRET:?set INTERNAL_AUTH_SECRET}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
+      PORT: 3004
+    depends_on:
+      processing-migrate: { condition: service_completed_successfully }
+      traceability: { condition: service_started }
   gateway:
     build: { context: ., dockerfile: Dockerfile }
     command: ["node", "src/services/gateway/server.js"]
@@ -109,12 +144,14 @@ services:
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
       TRACEABILITY_URL: http://traceability:3002
       LOGISTICS_URL: http://logistics:3003
+      PROCESSING_URL: http://processing:3004
       PORT: 3000
     ports: ["3000:3000"]
     depends_on:
       identity: { condition: service_started }
       traceability: { condition: service_started }
 volumes:
+  processing-mysql-data:
   logistics-mysql-data:
   identity-mysql-data:
   traceability-mysql-data:

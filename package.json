@@ -18,7 +18,9 @@
     "start:logistics": "node src/services/logistics/server.js",
     "migrate:logistics": "node scripts/migrate-service.js logistics",
     "user:roles": "node scripts/set-user-roles.js",
-    "smoke:sprint2": "node scripts/smoke-sprint2.js"
+    "smoke:sprint2": "node scripts/smoke-sprint2.js",
+    "start:processing": "node src/services/processing/server.js",
+    "migrate:processing": "node scripts/migrate-service.js processing"
   },
   "keywords": [],
   "author": "",
