@@ -1,7 +1,7 @@
 # MySQL 8.4 — configuración vigente
 
 La base de datos elegida para EventOre es **MySQL 8.4**, con InnoDB y el controlador
-Node `mysql2/promise`. Identity y Traceability conservan bases, usuarios, procesos y
+Node `mysql2/promise`. Identity, Traceability y Logistics conservan bases, usuarios, procesos y
 volúmenes separados; Gateway no accede a una base. Las rutas HTTP y el frontend Vue
 se conservan. El cambio se prepara en `feature/mysql-database` y requiere revisión
 mediante PR hacia `develop`.
@@ -19,7 +19,7 @@ curl http://localhost:3000/api/v1/health
 ```
 
 En PowerShell usar `Copy-Item .env.compose.example .env`. Los contenedores MySQL deben
-estar saludables y ambos jobs de migración terminar con código 0. Crear la cuenta
+estar saludables y los tres jobs de migración terminar con código 0. Crear la cuenta
 según el [README](../README.md). Arrancar Vue en el repositorio eventore con `npm ci
 --ignore-scripts` y `npm run dev`; APP_BASE_URL=http://localhost:5173.
 
@@ -91,3 +91,5 @@ La presencia de pruebas no equivale a un resultado: consultar los checks del PR.
 
 Referencias de implementación: [mysql2 Promise Pool](https://sidorares.github.io/node-mysql2/docs/examples/connections/create-pool),
 [commit implícito del DDL en MySQL 8.4](https://dev.mysql.com/doc/refman/8.4/en/implicit-commit.html).
+
+La ampliación de roles y Logistics se documenta en [Sprint 2](sprint2-access-custody.md). Agregar LOGISTICS_DB_PASSWORD sin cambiar las contraseñas de los volúmenes existentes.

@@ -47,7 +47,7 @@ export function createGatewayApp({ identityUrl, traceabilityUrl, logisticsUrl, f
   app.use('/api/v1/auth', proxy(identityUrl));
   app.use('/api/v1/custody', proxy(logisticsUrl));
   app.use(['/api/v1/lots', '/api/v1/events'], proxy(traceabilityUrl));
-  app.use(['/api/v1/openapi.json', '/api/docs'], proxy(traceabilityUrl));
+  app.use(['/api/v1/openapi.json', '/api/v1/traceability/openapi.json', '/api/docs'], proxy(traceabilityUrl));
   app.use('/api', (_req, res) => res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Endpoint inexistente' } }));
   return app;
 }

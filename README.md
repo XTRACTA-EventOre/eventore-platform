@@ -11,15 +11,15 @@ Docker con Compose v2. El frontend Vue/Vite se desarrolla en
 git clone https://github.com/XTRACTA-EventOre/eventore-platform.git
 cd eventore-platform
 git switch develop
-# Mientras el PR de MySQL esté abierto:
-# git switch feature/mysql-database
+# Mientras el PR funcional esté abierto:
+# git switch feature/sprint2-access-custody
 cp .env.compose.example .env
 # Editar .env: sustituir contraseñas y secreto interno; APP_BASE_URL es el origen del frontend.
 docker compose up -d --build
 docker compose ps
 ```
 
-En PowerShell, usar `Copy-Item .env.compose.example .env`. Los dos jobs de migración
+En PowerShell, usar `Copy-Item .env.compose.example .env`. Los tres jobs de migración
 deben finalizar con código 0. La API está en `http://localhost:3000/api/v1/health`;
 OpenAPI en `/api/v1/openapi.json` y Swagger en `/api/docs`. El gateway sirve solo APIs.
 
@@ -50,14 +50,15 @@ npm ci --ignore-scripts
 npm test
 ```
 
-Copiar `.env.example` a `.env`. Preparar dos bases MySQL 8.4 independientes. En cada
+Copiar `.env.example` a `.env`. Preparar bases MySQL 8.4 independientes para Identity, Traceability y Logistics. En cada
 terminal definir `DATABASE_URL` para la base correspondiente y `PORT` para su servicio:
 
 | Terminal | Configuración | Comandos |
 | --- | --- | --- |
 | Identity | DATABASE_URL de Identity, PORT=3001, INTERNAL_AUTH_SECRET, APP_BASE_URL | `npm run migrate:identity`, `npm run start:identity` |
 | Traceability | DATABASE_URL de Traceability, PORT=3002, IDENTITY_URL=http://localhost:3001, mismo secreto y origen | `npm run migrate:traceability`, `npm run start:traceability` |
-| Gateway | PORT=3000, IDENTITY_URL=http://localhost:3001, TRACEABILITY_URL=http://localhost:3002, APP_BASE_URL | `npm run dev` o `npm start` |
+| Logistics | DATABASE_URL de Logistics, PORT=3003, IDENTITY_URL, TRACEABILITY_URL, mismo secreto y origen | `npm run migrate:logistics`, `npm run start:logistics` |
+| Gateway | PORT=3000, IDENTITY_URL=http://localhost:3001, TRACEABILITY_URL=http://localhost:3002, LOGISTICS_URL=http://localhost:3003, APP_BASE_URL | `npm run dev` o `npm start` |
 
 Las variables del terminal prevalecen sobre `.env`. El comando `migrate` y `src/server.js`
 se conservan como compatibilidad/regresión del Sprint 1 con una base única; el despliegue
@@ -81,3 +82,5 @@ a `main`. [Configuración MySQL y datos previos](docs/mysql.md),
 Esta separación no completa las historias funcionales pendientes de los Avances 3 y 4.
 
 Los volúmenes MySQL nuevos no reutilizan los de PostgreSQL. Este PR no traslada datos existentes: consultar [procedimiento y límites](docs/mysql.md).
+
+Consulta [roles, cancelación y custodia](docs/sprint2-access-custody.md) para cuentas por rol, actualización de instalaciones y demostración.

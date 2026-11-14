@@ -2,6 +2,7 @@ import express from 'express';
 import { createSessionAuth } from '../../shared/infrastructure/http/sessionAuth.js';
 import { createAccessRouter } from './access.js';
 import { requirePermission } from '../../shared/infrastructure/http/permissions.js';
+import { fileURLToPath } from 'node:url';
 
 export function createIdentityApp({ pool, appBaseUrl, internalSecret, secure = false }) {
   if (!internalSecret) throw new Error('Configura INTERNAL_AUTH_SECRET');
@@ -12,6 +13,7 @@ export function createIdentityApp({ pool, appBaseUrl, internalSecret, secure = f
   app.use(auth.sameOrigin);
   app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'identity' }));
   app.use('/api/v1/auth', auth.router);
+  app.get('/api/v1/auth/openapi.json', (_req, res) => res.sendFile(fileURLToPath(new URL('../../../docs/identity-openapi.json', import.meta.url))));
   app.use('/api/v1/auth', createAccessRouter({ pool, authenticate: auth.authenticate }));
   app.get('/internal/session', (req, res, next) => {
     if (req.get('x-internal-secret') !== internalSecret) return res.status(403).end();

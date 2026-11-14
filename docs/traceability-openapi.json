@@ -1,0 +1,553 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "EventOre Traceability",
+    "version": "1.1.0",
+    "description": "Identity, Traceability y Logistics. MySQL 8.4, cookie de sesión y permisos verificados por operación."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "session": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "eventore_session"
+      }
+    },
+    "schemas": {
+      "Payload": {
+        "type": "object",
+        "required": [
+          "mineralType",
+          "weight",
+          "weightUnit",
+          "originEvidence"
+        ],
+        "properties": {
+          "mineralType": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "string",
+            "example": "125.50",
+            "description": "Exact positive decimal string: at most 35 integer digits and 30 fractional digits; INVALID_WEIGHT_PRECISION if exceeded.",
+            "maxLength": 66
+          },
+          "weightUnit": {
+            "type": "string",
+            "enum": [
+              "g",
+              "kg",
+              "t"
+            ]
+          },
+          "originEvidence": {
+            "type": "object",
+            "required": [
+              "reference",
+              "source"
+            ],
+            "properties": {
+              "reference": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "Event": {
+        "type": "object",
+        "required": [
+          "clientEventId",
+          "eventType",
+          "occurredAt",
+          "dependencies",
+          "payload"
+        ],
+        "properties": {
+          "clientEventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventType": {
+            "type": "string",
+            "enum": [
+              "LotRegistered"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp, years 1000-9999 in UTC, at most six fractional second digits."
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Empty for LotRegistered in Sprint 1"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/Payload"
+          }
+        }
+      },
+      "Outcome": {
+        "type": "object",
+        "properties": {
+          "clientEventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Accepted",
+              "AlreadyProcessed",
+              "Conflict",
+              "Rejected"
+            ]
+          },
+          "lotId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/lots": {
+      "post": {
+        "summary": "Register mineral lot",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/Payload"
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "clientEventId"
+                    ],
+                    "properties": {
+                      "clientEventId": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Already processed"
+          },
+          "201": {
+            "description": "Registered lot: lotId, status, version, originEvidenceStatus"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "409": {
+            "description": "Conflicting replay"
+          },
+          "503": {
+            "description": "Service unavailable"
+          }
+        },
+        "tags": [
+          "Traceability"
+        ]
+      }
+    },
+    "/lots/{lotId}": {
+      "get": {
+        "summary": "Read lot within own organization",
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current lot: lotId, mineralType, weight, weightUnit, status, version, originEvidenceStatus, transportStatus, qrProvesOrigin"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "404": {
+            "description": "Not found in organization"
+          },
+          "503": {
+            "description": "Service unavailable"
+          }
+        },
+        "tags": [
+          "Traceability"
+        ]
+      }
+    },
+    "/lots/{lotId}/qr": {
+      "get": {
+        "summary": "QR linking to authenticated application lookup",
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "QR image",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "409": {
+            "description": "Cancelled lot"
+          },
+          "503": {
+            "description": "Service unavailable"
+          }
+        },
+        "tags": [
+          "Traceability"
+        ]
+      }
+    },
+    "/events/synchronize": {
+      "post": {
+        "summary": "Process events idempotently",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sourceId",
+                  "events"
+                ],
+                "properties": {
+                  "sourceId": {
+                    "type": "string"
+                  },
+                  "events": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "$ref": "#/components/schemas/Event"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-event outcomes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Outcome"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "503": {
+            "description": "Service unavailable"
+          }
+        },
+        "tags": [
+          "Traceability"
+        ]
+      }
+    },
+    "/lots/{lotId}/cancellation": {
+      "post": {
+        "summary": "Cancelar un lote Registered conservando actor, fecha y motivo",
+        "tags": [
+          "Traceability"
+        ],
+        "x-permission": "lots.cancel",
+        "responses": {
+          "200": {
+            "description": "Operación confirmada",
+            "content": {
+              "application/json": {
+                "example": {
+                  "operationId": "33333333-3333-4333-8333-333333333333",
+                  "lotId": "22222222-2222-4222-8222-222222222222",
+                  "status": "Cancelled",
+                  "version": 2,
+                  "actorId": "44444444-4444-4444-8444-444444444444",
+                  "action": "Cancelled",
+                  "reason": "Registro duplicado",
+                  "occurredAt": "2026-11-14T15:00:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Sesión requerida"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "404": {
+            "description": "Recurso no visible en la organización"
+          },
+          "409": {
+            "description": "Versión/estado incompatible, último administrador o identificador reutilizado"
+          },
+          "503": {
+            "description": "Operación no confirmada; reintentar conservando operationId y el cuerpo original"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "operationId": "33333333-3333-4333-8333-333333333333",
+                "expectedVersion": 1,
+                "reason": "Registro duplicado"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/lots/{lotId}/handovers": {
+      "post": {
+        "summary": "Preparar entrega válida durante 24 horas; sustituye la anterior",
+        "tags": [
+          "Traceability"
+        ],
+        "x-permission": "lots.release",
+        "responses": {
+          "201": {
+            "description": "Operación confirmada",
+            "content": {
+              "application/json": {
+                "example": {
+                  "operationId": "33333333-3333-4333-8333-333333333333",
+                  "lotId": "22222222-2222-4222-8222-222222222222",
+                  "status": "Registered",
+                  "version": 2,
+                  "actorId": "44444444-4444-4444-8444-444444444444",
+                  "action": "HandoverPrepared",
+                  "occurredAt": "2026-11-14T15:00:00.000Z",
+                  "handoverId": "55555555-5555-4555-8555-555555555555",
+                  "recipientUserId": null,
+                  "expiresAt": "2026-11-15T15:00:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Sesión requerida"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "404": {
+            "description": "Recurso no visible en la organización"
+          },
+          "409": {
+            "description": "Versión/estado incompatible, último administrador o identificador reutilizado"
+          },
+          "503": {
+            "description": "Operación no confirmada; reintentar conservando operationId y el cuerpo original"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "operationId": "33333333-3333-4333-8333-333333333333",
+                "expectedVersion": 1,
+                "recipientUserId": null
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/lots/{lotId}/operations": {
+      "get": {
+        "summary": "Historial, entrega disponible y restricciones activas",
+        "tags": [
+          "Traceability"
+        ],
+        "x-permission": "lots.read",
+        "responses": {
+          "200": {
+            "description": "Operación confirmada",
+            "content": {
+              "application/json": {
+                "example": {
+                  "history": [
+                    {
+                      "operationId": "33333333-3333-4333-8333-333333333333",
+                      "lotId": "22222222-2222-4222-8222-222222222222",
+                      "status": "Cancelled",
+                      "version": 2,
+                      "actorId": "44444444-4444-4444-8444-444444444444",
+                      "action": "Cancelled",
+                      "reason": "Registro duplicado",
+                      "occurredAt": "2026-11-14T15:00:00.000Z"
+                    }
+                  ],
+                  "handovers": [],
+                  "restrictions": []
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Sesión requerida"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "404": {
+            "description": "Recurso no visible en la organización"
+          },
+          "409": {
+            "description": "Versión/estado incompatible, último administrador o identificador reutilizado"
+          },
+          "503": {
+            "description": "Operación no confirmada; reintentar conservando operationId y el cuerpo original"
+          }
+        },
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

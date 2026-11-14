@@ -4,6 +4,7 @@ import { createSessionAuth } from '../../shared/infrastructure/http/sessionAuth.
 import { requirePermission } from '../../shared/infrastructure/http/permissions.js';
 import { OperationError } from '../../shared/application/OperationError.js';
 import { CustodyService } from './CustodyService.js';
+import { fileURLToPath } from 'node:url';
 
 const uuid = (value, field) => {
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value ?? '')) {
@@ -22,6 +23,7 @@ export function createLogisticsApp({ pool, identityUrl, traceabilityUrl, interna
     ? res.status(error.status).json({ error: { code: error.code, message: error.message } })
     : res.status(503).json({ error: { code: 'CUSTODY_NOT_CONFIRMED', message: 'Reintenta con el mismo identificador' } });
   app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'logistics' }));
+  app.get('/api/v1/custody/openapi.json', (_req, res) => res.sendFile(fileURLToPath(new URL('../../../docs/logistics-openapi.json', import.meta.url))));
   app.post('/api/v1/custody/lots/:lotId/accept', authenticate, requirePermission('custody.accept'), async (req, res) => {
     try {
       const body = req.body ?? {};
