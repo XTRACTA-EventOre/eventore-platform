@@ -5,6 +5,7 @@ import { requirePermission } from '../../shared/infrastructure/http/permissions.
 import { OperationError } from '../../shared/application/OperationError.js';
 import { CustodyService } from './CustodyService.js';
 import { fileURLToPath } from 'node:url';
+import { createShipmentRouter } from './shipments.routes.js';
 
 const uuid = (value, field) => {
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value ?? '')) {
@@ -38,5 +39,6 @@ export function createLogisticsApp({ pool, identityUrl, traceabilityUrl, interna
     try { res.json(await custody.read({ tenantId: req.identity.tenantId, lotId: uuid(req.params.lotId, 'lotId') }, req)); }
     catch (error) { failed(res, error); }
   });
+  app.use('/api/v1/shipments', createShipmentRouter({ pool, identityUrl, traceabilityUrl, internalSecret, fetchImpl }, authenticate));
   return app;
 }

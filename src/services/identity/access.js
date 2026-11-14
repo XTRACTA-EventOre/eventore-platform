@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { randomUUID } from 'node:crypto';
-import { ROLE_PERMISSIONS, requirePermission } from '../../shared/infrastructure/http/permissions.js';
+import { ROLE_PERMISSIONS, requirePermission, requireAnyPermission } from '../../shared/infrastructure/http/permissions.js';
 
 export function createAccessRouter({ pool, authenticate }) {
   const router = Router();
   router.use(authenticate);
   router.get('/roles', requirePermission('users.manage'), (_req, res) => res.json({ roles: ROLE_PERMISSIONS }));
-  router.get('/transporters', requirePermission('lots.release'), async (req, res) => {
+  router.get('/transporters', requireAnyPermission('lots.release', 'shipments.delegate'), async (req, res) => {
     try {
       const [users] = await pool.execute(`SELECT u.id,u.email FROM app_users u
         JOIN app_user_roles r ON r.user_id=u.id WHERE u.tenant_id=? AND u.active=true

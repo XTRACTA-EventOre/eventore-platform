@@ -74,7 +74,10 @@ export class CustodyService {
       }
     }
     const [rows] = await this.pool.execute('SELECT state,result,operation_id FROM custody_operations WHERE tenant_id=? AND lot_id=? ORDER BY updated_at,operation_id', [tenantId, lotId]);
-    return { custody: rows.find(row => row.state === 'Accepted')?.result ?? null,
+    const snapshot = await this.callTraceability(`/internal/lots/${lotId}/state`, req);
+    const original = rows.find(row => row.state === 'Accepted')?.result;
+    return { custody: original ? { ...original, custodianUserId: snapshot.custodianUserId,
+        status: snapshot.status, currentVersion: snapshot.version } : null,
       pending: rows.filter(row => row.state === 'Pending').map(row => row.operation_id) };
   }
 }

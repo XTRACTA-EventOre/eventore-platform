@@ -1,7 +1,7 @@
 import express from 'express';
 import { createSessionAuth } from '../../shared/infrastructure/http/sessionAuth.js';
 import { createAccessRouter } from './access.js';
-import { requirePermission } from '../../shared/infrastructure/http/permissions.js';
+import { requireAnyPermission } from '../../shared/infrastructure/http/permissions.js';
 import { fileURLToPath } from 'node:url';
 
 export function createIdentityApp({ pool, appBaseUrl, internalSecret, secure = false }) {
@@ -22,7 +22,7 @@ export function createIdentityApp({ pool, appBaseUrl, internalSecret, secure = f
   app.get('/internal/transporters/:userId', (req, res, next) => {
     if (req.get('x-internal-secret') !== internalSecret) return res.status(403).end();
     return auth.authenticate(req, res, next);
-  }, requirePermission('lots.release'), async (req, res) => {
+  }, requireAnyPermission('lots.release', 'shipments.delegate'), async (req, res) => {
     try {
       const [rows] = await pool.execute(`SELECT u.id FROM app_users u JOIN app_user_roles r ON r.user_id=u.id
         WHERE u.id=? AND u.tenant_id=? AND u.active=true AND r.role_name='Transporter'`, [req.params.userId, req.identity.tenantId]);

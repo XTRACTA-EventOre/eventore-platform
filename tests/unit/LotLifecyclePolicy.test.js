@@ -27,7 +27,7 @@ describe('US18/US19 lifecycle rules', () => {
 describe('US05 least-privilege permission decisions', () => {
   test('operator cannot manage users, cancel or accept custody', () => {
     expect(accessForRoles(['Operator']).permissions).toEqual(['lots.read', 'lots.register']);
-    expect(accessForRoles(['Transporter']).permissions).toEqual(['custody.accept', 'lots.read']);
+    expect(accessForRoles(['Transporter']).permissions).toEqual(['custody.accept', 'lots.read', 'shipments.checkpoint', 'shipments.delegate', 'shipments.report']);
     expect(accessForRoles(['Unknown']).permissions).toEqual([]);
   });
   test('absence of permission is forbidden even with a valid identity', () => {

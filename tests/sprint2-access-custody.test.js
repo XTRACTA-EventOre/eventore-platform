@@ -38,7 +38,7 @@ suite('US05, US18 and US19 across independent MySQL services', () => {
     const hash = await hashPassword(password);
     for (const [name, role, owner] of [['admin','Administrator',tenant], ['supervisor','Supervisor',tenant],
       ['operator','Operator',tenant], ['carrierA','Transporter',tenant], ['carrierB','Transporter',tenant],
-      ['foreign','Supervisor',foreignTenant]]) {
+      ['foreign','Supervisor',foreignTenant], ['plant','PlantOperator',tenant], ['certifier','Certifier',tenant]]) {
       const id = randomUUID(); users[name] = id;
       await identity.pool.execute('INSERT INTO app_users(id,tenant_id,email,password_hash) VALUES(?,?,?,?)', [id, owner, `${name}@example.test`.toLowerCase(), hash]);
       await identity.pool.execute('INSERT INTO app_user_roles(user_id,role_name) VALUES(?,?)', [id, role]);
@@ -171,5 +171,66 @@ suite('US05, US18 and US19 across independent MySQL services', () => {
       const [rows] = await runtime.pool.query('SHOW TABLES'); const names = rows.flatMap(row => Object.values(row));
       expect(names).toContain(present); expect(names).not.toContain(absent);
     }
+  });
+
+  test('US24: checkpoints compare compatible units and exactly ten percent creates an investigable restriction', async () => {
+    const lot = await register(), delivery = await prepare(lot);
+    await call('post', `/api/v1/custody/lots/${lot.lotId}/accept`, cookies.carrierA).send(acceptBody(delivery));
+    const path = `/api/v1/shipments/lots/${lot.lotId}/checkpoints`;
+    expect((await call('post', path, cookies.carrierB).send({ operationId: randomUUID(), expectedVersion: 3, weight: '125.5', weightUnit: 'kg', location: 'Balanza' })).status).toBe(403);
+    expect((await call('post', path, cookies.carrierA).send({ operationId: randomUUID(), expectedVersion: 3, weight: '125.5', weightUnit: 'oz', location: 'Balanza' })).status).toBe(400);
+    const first = await call('post', path, cookies.carrierA).send({ operationId: randomUUID(), expectedVersion: 3, weight: '125500', weightUnit: 'g', location: 'Control 1' });
+    expect(first.status).toBe(200); expect(first.body.comparison.critical).toBe(false);
+    const second = await call('post', path, cookies.carrierA).send({ operationId: randomUUID(), expectedVersion: 4, weight: '112.95', weightUnit: 'kg', location: 'Control 2' });
+    expect(second.status).toBe(200); expect(second.body.comparison).toMatchObject({ critical: true, lossPercentage: '10' });
+    expect(second.body.comparison.interpretation).toContain('no demuestra robo');
+    const shipment = await call('get', `/api/v1/shipments/lots/${lot.lotId}`, cookies.supervisor);
+    expect(shipment.body.events).toHaveLength(2); expect(shipment.body.snapshot.restrictions).toHaveLength(1);
+  });
+
+  test('US23/US26: validates private photos, preserves quarantine through receipt and audits its release', async () => {
+    const lot = await register(), delivery = await prepare(lot);
+    await call('post', `/api/v1/custody/lots/${lot.lotId}/accept`, cookies.carrierA).send(acceptBody(delivery));
+    const photo = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j3ioAAAAASUVORK5CYII=', 'base64');
+    const upload = `/api/v1/shipments/lots/${lot.lotId}/evidence`;
+    expect((await call('post', upload, cookies.carrierA).set('Content-Type', 'image/jpeg').send(photo)).status).toBe(400);
+    expect((await call('post', upload, cookies.carrierA).set('Content-Type', 'image/png').send(Buffer.alloc(5*1024*1024+1))).status).toBe(413);
+    const saved = await call('post', upload, cookies.carrierA).set('Content-Type', 'image/png').send(photo);
+    expect(saved.status).toBe(201);
+    const incident = await call('post', `/api/v1/shipments/lots/${lot.lotId}/incidents`, cookies.carrierA)
+      .send({ operationId: randomUUID(), expectedVersion: 3, description: 'Precinto comprometido', severity: 'Blocking', photoIds: [saved.body.id] });
+    expect(incident.status).toBe(200); expect(incident.body.actorId).toBe(users.carrierA);
+    const image = await call('get', `/api/v1/shipments/evidence/${saved.body.id}`, cookies.plant);
+    expect(image.status).toBe(200); expect(image.headers['content-type']).toContain('image/png');
+    expect((await call('get', `/api/v1/shipments/evidence/${saved.body.id}`, cookies.foreign)).status).toBe(404);
+    const receiptPath = `/api/v1/shipments/lots/${lot.lotId}/receipt`;
+    expect((await call('post', receiptPath, cookies.plant).send({ operationId: randomUUID(), expectedVersion: 4 })).status).toBe(409);
+    const receipt = await call('post', receiptPath, cookies.plant).send({ operationId: randomUUID(), expectedVersion: 4,
+      quarantineDecision: 'ReceiveUnderQuarantine', reviewReason: 'Recepción física en zona aislada' });
+    expect(receipt.status).toBe(200); expect(receipt.body).toMatchObject({ status: 'Received', quarantineRetained: true, custodianUserId: users.plant });
+    const before = await call('get', `/api/v1/shipments/lots/${lot.lotId}`, cookies.plant);
+    expect(before.body.snapshot.restrictions).toHaveLength(1);
+    const released = await call('post', `/api/v1/shipments/lots/${lot.lotId}/restriction-review`, cookies.plant)
+      .send({ operationId: randomUUID(), expectedVersion: 5, restrictionId: incident.body.restrictionId, decision: 'Release', reason: 'Evidencia revisada y lote liberado' });
+    expect(released.status).toBe(200);
+    expect((await call('get', `/api/v1/shipments/lots/${lot.lotId}`, cookies.plant)).body.snapshot.restrictions).toHaveLength(0);
+    expect((await call('post', receiptPath, cookies.plant).send({ operationId: randomUUID(), expectedVersion: 6 })).status).toBe(409);
+  });
+
+  test('US25: delegation requires sender proposal and authorized receiver confirmation', async () => {
+    const lot = await register(), delivery = await prepare(lot);
+    await call('post', `/api/v1/custody/lots/${lot.lotId}/accept`, cookies.carrierA).send(acceptBody(delivery));
+    const proposal = await call('post', `/api/v1/shipments/lots/${lot.lotId}/delegations`, cookies.carrierA)
+      .send({ operationId: randomUUID(), expectedVersion: 3, recipientUserId: users.carrierB });
+    expect(proposal.status).toBe(200);
+    expect((await call('get', `/api/v1/shipments/lots/${lot.lotId}`, cookies.carrierA)).body.snapshot.custodianUserId).toBe(users.carrierA);
+    const accept = { operationId: randomUUID(), expectedVersion: 4, delegationId: proposal.body.delegationId };
+    expect((await call('post', `/api/v1/shipments/lots/${lot.lotId}/delegation-acceptance`, cookies.carrierA).send(accept)).status).toBe(403);
+    const received = await call('post', `/api/v1/shipments/lots/${lot.lotId}/delegation-acceptance`, cookies.carrierB).send({ ...accept, operationId: randomUUID() });
+    expect(received.status).toBe(200); expect(received.body.custodianUserId).toBe(users.carrierB);
+    const current = await call('get', `/api/v1/custody/lots/${lot.lotId}`, cookies.carrierA);
+    expect(current.body.custody.custodianUserId).toBe(users.carrierB);
+    expect((await call('post', `/api/v1/shipments/lots/${lot.lotId}/checkpoints`, cookies.carrierA)
+      .send({ operationId: randomUUID(), expectedVersion: 5, weight: '125.5', weightUnit: 'kg', location: 'Control' })).status).toBe(403);
   });
 });
