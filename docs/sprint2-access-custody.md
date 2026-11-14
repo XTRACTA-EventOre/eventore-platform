@@ -1,5 +1,8 @@
 # Sprint 2 — roles, cancelación y aceptación de custodia
 
+Registro de una etapa previa. El alcance y las pruebas actuales se describen en la [guía de Avance 4](https://github.com/XTRACTA-EventOre/eventore-platform/blob/feature/sprint2-access-custody/docs/avance4/testing-guide.md); las limitaciones históricas de este documento no sustituyen ese estado vigente.
+
+
 ## Alcance verificable
 
 US05 administra roles de usuarios de la misma organización y aplica los permisos

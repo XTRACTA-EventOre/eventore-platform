@@ -10,9 +10,8 @@ Docker con Compose v2. El frontend Vue/Vite se desarrolla en
 ```sh
 git clone https://github.com/XTRACTA-EventOre/eventore-platform.git
 cd eventore-platform
-git switch develop
-# Mientras el PR funcional esté abierto:
-# git switch feature/sprint2-access-custody
+git switch feature/sprint2-access-custody
+# Después de revisar e integrar el PR, usar develop.
 cp .env.compose.example .env
 # Editar .env: sustituir contraseñas y secreto interno; APP_BASE_URL es el origen del frontend.
 docker compose up -d --build

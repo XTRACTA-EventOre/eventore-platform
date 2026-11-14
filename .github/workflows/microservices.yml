@@ -34,7 +34,7 @@ jobs:
       - name: Validate cloud Compose variants without provisioning resources
         env:
           PUBLIC_HOST: eventore.example.test
-          FRONTEND_REF: ed78e503ab2b12913ff8cac6e99b168a93c8c61f
+          FRONTEND_REF: 0de802d648d3114299eabe678d05dd978c8dc332
           ORIGIN_SECRET: local-ci-origin-header-only
         run: |
           docker compose -f compose.yaml -f compose.cloud.yaml config --quiet
