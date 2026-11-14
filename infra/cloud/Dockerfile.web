@@ -1,0 +1,12 @@
+FROM node:24-alpine AS frontend
+RUN apk add --no-cache git
+WORKDIR /web
+ARG FRONTEND_REF
+RUN test -n "$FRONTEND_REF" && git init . && git remote add origin https://github.com/XTRACTA-EventOre/eventore.git && git fetch --depth 1 origin "$FRONTEND_REF" && git checkout --detach FETCH_HEAD
+RUN npm ci --ignore-scripts
+ENV VITE_API_BASE_URL=/api
+RUN npm run build
+FROM caddy:2-alpine
+ARG CADDY_CONFIG=Caddyfile
+COPY --from=frontend /web/dist /srv
+COPY infra/cloud/${CADDY_CONFIG} /etc/caddy/Caddyfile

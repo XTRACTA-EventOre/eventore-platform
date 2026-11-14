@@ -17,7 +17,7 @@ export async function serviceHarness({includeProcessing=true}={}){
   let gateway;
   async function close(){await Promise.all(servers.map(server=>new Promise(resolve=>server.close(resolve))));await Promise.all(Object.values(runtimes).map(runtime=>runtime.close()));}
   async function start(name,app){const server=await new Promise(resolve=>{const s=app.listen(0,'127.0.0.1',()=>resolve(s));});servers.push(server);urls[name]=`http://127.0.0.1:${server.address().port}`;}
-  async function api(actor,method,path,body,status=200){let req=request(gateway)[method](path).set('Cookie',cookies[actor]);if(body!==undefined)req=req.send(body);const response=await req;if(response.status!==status)throw new Error(`${actor} ${method} ${path}: expected ${status}, got ${response.status} ${JSON.stringify(response.body)}`);return response.body;}
+  async function api(actor,method,path,body,status=200){const qrReceipt=/^\/api\/v1\/jewelry\/lots\/([^/]+)\/receipt$/.exec(path);if(qrReceipt&&body)body={qrLotId:qrReceipt[1],...body};let req=request(gateway)[method](path).set('Cookie',cookies[actor]);if(body!==undefined)req=req.send(body);const response=await req;if(response.status!==status)throw new Error(`${actor} ${method} ${path}: expected ${status}, got ${response.status} ${JSON.stringify(response.body)}`);return response.body;}
   try{
     for(const service of ['identity','traceability','logistics',...(includeProcessing?['processing','jewelry','certification','devices','reporting']:[])])runtimes[service]=await makeMySqlRuntime({service});
     const hash=await hashPassword(password);

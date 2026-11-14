@@ -5,6 +5,7 @@ import { createSessionAuth } from '../../shared/infrastructure/http/sessionAuth.
 import { requirePermission } from '../../shared/infrastructure/http/permissions.js';
 import { operationBody,uuid,text,version,apiError } from '../../shared/infrastructure/http/operationHttp.js';
 import { JewelryService } from './JewelryService.js';
+import { OperationError } from '../../shared/application/OperationError.js';
 export function createJewelryApp(options){
   const {identityUrl,internalSecret,appBaseUrl,fetchImpl=fetch}=options,app=express(),service=new JewelryService(options);
   app.disable('x-powered-by');app.use(express.json());app.use(createSessionAuth({pool:null,appBaseUrl}).sameOrigin);
@@ -20,7 +21,11 @@ export function createJewelryApp(options){
   }));
   app.get('/api/v1/jewelry/products',auth,access,handle(async req=>({products:await service.products(req.identity.tenantId)})));
   app.get('/api/v1/jewelry/products/:id',auth,access,handle(req=>service.product(req.identity.tenantId,uuid(req.params.id))));
-  app.post('/api/v1/jewelry/lots/:lotId/receipt',auth,access,handle(req=>service.receipt(operationBody(req,'JewelryReceived'),req)));
+  app.post('/api/v1/jewelry/lots/:lotId/receipt',auth,access,handle(req=>{
+    const command={...operationBody(req,'JewelryReceived'),qrLotId:uuid(req.body?.qrLotId)};
+    if(command.qrLotId!==command.lotId)throw new OperationError(400,'QR_LOT_MISMATCH','El QR no corresponde al lote esperado para recepción');
+    return service.receipt(command,req);
+  }));
   app.post('/api/v1/jewelry/external-materials',auth,access,handle(req=>service.external({tenantId:req.identity.tenantId,actorId:req.identity.userId,operationId:uuid(req.body?.operationId),action:'ExternalMaterialDeclared',mineralType:text(req.body?.mineralType,'Mineral',80),source:text(req.body?.source,'Procedencia declarada'),weight:req.body?.weight,weightUnit:req.body?.weightUnit})));
   const allocate=req=>{
     const expectedVersion=req.params.id?version(req.body?.expectedVersion):0;

@@ -292,7 +292,7 @@ services:
       JEWELRY_URL: http://jewelry:3005
       CERTIFICATION_URL: http://certification:3006
       PORT: 3000
-    ports: ["3000:3000"]
+    ports: ["127.0.0.1:3000:3000"]
     depends_on:
       identity: { condition: service_started }
       traceability: { condition: service_started }

@@ -23,7 +23,7 @@ suite('Sprint 3 jewelry, certification and public verification across six databa
  const issue=async cert=>h.api('certifier','post',`/api/v1/certificates/${cert.certificateId}/review`,{operationId:randomUUID(),expectedVersion:cert.version,decision:'Issue',issuerName:'Laboratorio EventOre de prueba',reason:'Genealogía y evidencias revisadas'});
  const publicly=async id=>(await request(h.gateway).get(`/api/v1/public/certificates/${id}`).expect(200)).body;
  test('receipt only accepts Processed once and preserves declared evidence classification',async()=>{
-  const lot=await h.receivedLot();await h.api('jeweler','post',`/api/v1/jewelry/lots/${lot.lotId}/receipt`,{operationId:randomUUID(),expectedVersion:lot.version},409);
+  const lot=await h.receivedLot();await h.api('jeweler','post',`/api/v1/jewelry/lots/${lot.lotId}/receipt`,{operationId:randomUUID(),expectedVersion:lot.version,qrLotId:randomUUID()},400);await h.api('jeweler','post',`/api/v1/jewelry/lots/${lot.lotId}/receipt`,{operationId:randomUUID(),expectedVersion:lot.version},409);
   const received=await material({verified:false});expect(received.originEvidenceStatus).toBe('PendingReview');
   await h.api('jeweler','post',`/api/v1/jewelry/lots/${received.lotId}/receipt`,{operationId:randomUUID(),expectedVersion:received.version},409);
   const inventory=await h.api('jeweler','get','/api/v1/jewelry/inventory');expect(inventory.materials.find(m=>m.id===received.materialId).category).toBe('Declared');

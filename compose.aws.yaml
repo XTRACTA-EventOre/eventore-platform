@@ -1,0 +1,18 @@
+# CloudFront terminates viewer TLS. EC2 HTTP accepts only CloudFront + a private origin header.
+services:
+  identity:
+    environment:
+      NODE_ENV: production
+  web:
+    build:
+      context: .
+      dockerfile: infra/cloud/Dockerfile.web
+      args:
+        FRONTEND_REF: ${FRONTEND_REF:?set reviewed frontend commit SHA}
+        CADDY_CONFIG: Caddyfile.aws
+    environment:
+      ORIGIN_SECRET: ${ORIGIN_SECRET:?load from the stack Secrets Manager secret}
+    ports: ["80:80"]
+    depends_on:
+      gateway: {condition: service_started}
+    restart: unless-stopped

@@ -4451,12 +4451,17 @@
                   },
                   "expectedVersion": {
                     "type": "integer"
+                  },
+                  "qrLotId": {
+                    "type": "string",
+                    "format": "uuid"
                   }
                 }
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
-                "expectedVersion": 3
+                "expectedVersion": 3,
+                "qrLotId": "22222222-2222-4222-8222-222222222222"
               }
             }
           }
