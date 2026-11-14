@@ -51,6 +51,9 @@ workspace "EventOre Avance 4" "Modelo del incremento implementado y despliegue A
         tags "Database"
       }
     }
+    operator -> eventore "Opera segun permisos"
+    consumer -> eventore "Consulta historial y vigencia"
+    deviceAdapter -> eventore "Envia mediciones autenticadas"
     operator -> web "Opera segun permisos" "HTTPS"
     consumer -> web "Consulta el QR" "HTTPS"
     deviceAdapter -> gateway "Envia reportes con Bearer" "HTTPS"
@@ -90,9 +93,9 @@ workspace "EventOre Avance 4" "Modelo del incremento implementado y despliegue A
     persistence -> traceabilityDb "Estado, evidencia e historial atomicos" "SQL"
     deploymentEnvironment "AWS propuesto" {
       deploymentNode "AWS" "Diseno pendiente de cuenta y aprobacion de gasto" "Cloud" {
-        infrastructureNode "CloudFront" "TLS viewer y acceso al origen" "AWS managed service"
+        cloudfront = infrastructureNode "CloudFront" "TLS viewer y acceso al origen" "AWS managed service"
         deploymentNode "EC2" "Una VM sin alta disponibilidad" "t3.large y Docker Compose" {
-          containerInstance web
+          webDeployed = containerInstance web
           containerInstance gateway
           containerInstance identity
           containerInstance identityDb
@@ -113,6 +116,7 @@ workspace "EventOre Avance 4" "Modelo del incremento implementado y despliegue A
         }
       }
     }
+    cloudfront -> webDeployed "HTTP restringido y cabecera privada"
   }
   views {
     systemContext eventore "Context" {

@@ -26,6 +26,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Validate editable C4 model
+        run: >-
+          docker run --rm -v "$PWD/docs/architecture:/usr/local/structurizr:ro"
+          structurizr/cli@sha256:717e320e0ad52335ea9939bf5fae092620cc3deccecf6f280a5b6fee99763c53
+          validate -workspace /usr/local/structurizr/workspace.dsl
       - name: Validate cloud Compose variants without provisioning resources
         env:
           PUBLIC_HOST: eventore.example.test
@@ -50,7 +55,7 @@ jobs:
           docker run --rm --network host --user "$(id -u):$(id -g)"
           -v "$PWD/docs/postman:/etc/newman:ro" -v "$PWD/test-results:/reports"
           postman/newman@sha256:d9b5e780ead0026bbb37f3759cd7b10fc8a88cd4030c8266a7c5e343d75a5198
-          run avance4.postman_collection.json --env-var baseUrl=http://localhost:3000
+          run avance4.postman_collection.json --env-var baseUrl=http://127.0.0.1:3000
           --env-var password="$SMOKE_PASSWORD" --reporters cli,junit
           --reporter-junit-export /reports/postman.xml
       - if: always()
