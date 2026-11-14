@@ -48,11 +48,11 @@ jobs:
       - run: mkdir -p test-results
       - run: >-
           docker run --rm --network host --user "$(id -u):$(id -g)"
-          -v "$PWD/docs/postman:/etc/newman:ro" -v "$PWD/test-results:/etc/newman/reports"
+          -v "$PWD/docs/postman:/etc/newman:ro" -v "$PWD/test-results:/reports"
           postman/newman@sha256:d9b5e780ead0026bbb37f3759cd7b10fc8a88cd4030c8266a7c5e343d75a5198
           run avance4.postman_collection.json --env-var baseUrl=http://localhost:3000
           --env-var password="$SMOKE_PASSWORD" --reporters cli,junit
-          --reporter-junit-export reports/postman.xml
+          --reporter-junit-export /reports/postman.xml
       - if: always()
         run: docker compose logs --no-color --tail=100
       - if: always()
