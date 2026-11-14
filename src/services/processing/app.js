@@ -10,6 +10,7 @@ export function createProcessingApp(options){
   const authenticate=createRemoteAuth({identityUrl,internalSecret,fetchImpl}),service=new ProcessingService(options);
   app.get('/health',(_req,res)=>res.json({status:'ok',service:'processing'}));
   app.get('/api/v1/processing/lots/:lotId',authenticate,requirePermission('lots.read'),async(req,res)=>{try{res.json(await service.read(req.identity.tenantId,uuid(req.params.lotId),req));}catch(error){apiError(res,error);}});
+  app.get('/api/v1/processing/lots/:lotId/genealogy',authenticate,requirePermission('lots.read'),async(req,res)=>{try{res.json(await service.trace.request(`/internal/lots/${uuid(req.params.lotId)}/genealogy`,{req}));}catch(error){apiError(res,error);}});
   const routes=[
     ['start','ProcessingStarted',()=>({})],
     ['assays','AssayRecorded',body=>({purity:body.purity,evidenceRef:text(body.evidenceRef,'Evidencia'),correctionOf:body.correctionOf??null,correctionReason:body.correctionReason?.trim()||null})],

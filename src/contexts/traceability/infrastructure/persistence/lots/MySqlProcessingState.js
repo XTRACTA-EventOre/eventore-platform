@@ -24,6 +24,8 @@ export class MySqlProcessingState {
       visiting.add(id);
       const state=await this.view(tenantId,id,db);nodes.set(id,state);
       const [parents]=await db.execute('SELECT parent_lot_id AS parentId FROM lot_lineage WHERE tenant_id=? AND child_lot_id=?',[tenantId,id]);
+      const creation=state.facts.find(fact=>fact.action==='TransformationOutputCreated');
+      if(creation&&(!Array.isArray(creation.parents)||JSON.stringify([...creation.parents].sort())!==JSON.stringify(parents.map(p=>p.parentId).sort())))throw new OperationError(409,'INCOMPLETE_GENEALOGY','Faltan relaciones de una transformación documentada');
       for(const {parentId} of parents){edges.push({parentId,childId:id});await visit(parentId);}
       visiting.delete(id);complete.add(id);
     };

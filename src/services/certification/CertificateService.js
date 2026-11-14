@@ -14,7 +14,7 @@ export class CertificateService{
     return {product,graphs,...review};
   }
   async get(tenantId,id,db=this.pool){const[[row]]=await db.execute('SELECT * FROM certificates WHERE tenant_id=? AND id=?',[tenantId,id]);if(!row)throw new OperationError(404,'CERTIFICATE_NOT_FOUND','Certificado no encontrado');return row;}
-  async list(tenantId,{productId,status}={}){const[rows]=await this.pool.execute('SELECT id,product_id AS productId,product_version AS productVersion,version,status,created_at AS createdAt,issued_at AS issuedAt FROM certificates WHERE tenant_id=? AND (? IS NULL OR product_id=?) AND (? IS NULL OR status=?) ORDER BY created_at DESC,id DESC',[tenantId,productId??null,productId??null,status??null,status??null]);return rows;}
+  async list(tenantId,{productId,status}={}){const[rows]=await this.pool.execute('SELECT id,product_id AS productId,product_version AS productVersion,version,status,created_at AS createdAt,issued_at AS issuedAt FROM certificates WHERE tenant_id=? AND (? IS NULL OR product_id=?) AND (? IS NULL OR status=?) ORDER BY COALESCE(issued_at,created_at) DESC,id DESC',[tenantId,productId??null,productId??null,status??null,status??null]);return rows;}
   async mutate(command,apply){
     const tx=await this.pool.getConnection();
     try{await tx.beginTransaction();
@@ -62,6 +62,6 @@ export class CertificateService{
     }
     const summary=structuredClone(cert.published_summary);
     if(evidenceLevel!=='Verified')for(const material of summary.materials)if(material.evidenceLevel==='Verified')material.evidenceLevel='Declared';
-    return {certificateId:id,status,evidenceLevel,issuer:cert.issuer_name??null,issuedAt:cert.issued_at,updatedAt:cert.updated_at,checkedAt:new Date().toISOString(),...summary};
+    return {certificateId:id,status,evidenceLevel,issuer:cert.issuer_name??null,evidenceVersion:cert.evidence_hash,scope:'Trazabilidad y evidencias registradas y revisadas en EventOre',issuedAt:cert.issued_at,updatedAt:cert.updated_at,checkedAt:new Date().toISOString(),...summary};
   }
 }

@@ -11,6 +11,7 @@ export async function renderCertificatePdf(certificate,publicUrl){
     doc.moveDown().fillColor('#172927').font('Helvetica').fontSize(10).text(`Certificado: ${certificate.certificateId}`);
     doc.text(`Joya: ${certificate.product.name}`);doc.text(`Versión de composición: ${certificate.product.compositionVersion}`);
     doc.text(`Emisor: ${certificate.issuer}`);doc.text(`Emisión: ${new Date(certificate.issuedAt).toISOString()}`);
+    doc.fontSize(8).text(`Versión de evidencia SHA-256: ${certificate.evidenceVersion}`).fontSize(10);
     doc.moveDown().font('Helvetica-Bold').text('Alcance');doc.font('Helvetica').text('Trazabilidad y evidencia revisadas dentro de EventOre. Este documento no certifica por sí mismo composición química, legalidad ni autenticidad física del objeto.');
     doc.moveDown().font('Helvetica-Bold').text('Materiales de la composición revisada');doc.font('Helvetica');
     for(const material of certificate.materials)doc.text(`${material.mineralType} · ${material.quantityGrams} g · evidencia verificada`);

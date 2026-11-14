@@ -13,6 +13,10 @@ export function createCertificationApp(options){
   app.get('/health',(_req,res)=>res.json({status:'ok',service:'certification'}));
   app.get('/api/v1/public/certificates/:id',handle(req=>service.publicStatus(uuid(req.params.id))));
   app.get('/api/v1/certificates',auth,requirePermission('certificates.read'),handle(async req=>({certificates:await service.list(req.identity.tenantId,{productId:req.query.productId?uuid(req.query.productId):undefined,status:req.query.status})})));
+  app.get('/api/v1/certificates/:id/eligibility',auth,requirePermission('certificates.review'),handle(async req=>{
+    const cert=await service.get(req.identity.tenantId,uuid(req.params.id)),result=await service.evidence(req.identity.tenantId,cert.product_id);
+    return {eligible:result.eligible&&result.product.version===cert.product_version,issues:result.product.version===cert.product_version?result.issues:[...result.issues,{code:'COMPOSITION_CHANGED'}],evidenceVersion:result.evidenceHash,productVersion:result.product.version};
+  }));
   app.get('/api/v1/certificates/:id',auth,requirePermission('certificates.read'),handle(async req=>{
     const cert=await service.get(req.identity.tenantId,uuid(req.params.id)),[history]=await options.pool.execute('SELECT actor_id AS actorId,action,command,result,occurred_at AS occurredAt FROM certificate_operations WHERE tenant_id=? AND certificate_id=? ORDER BY occurred_at,operation_id',[req.identity.tenantId,cert.id]);
     return {certificateId:cert.id,productId:cert.product_id,productVersion:cert.product_version,version:cert.version,status:cert.status,current:await service.publicStatus(cert.id),history};
