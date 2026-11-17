@@ -6,7 +6,7 @@ El alcance de código acumulado suma **169 de 226 Story Points (74,8 %)**: 40 hi
 | --- | ---: | ---: |
 | Sprint 1 | 5 | 22 |
 | Sprint 2 | 8 | 29 |
-| Sprint 3 original | 17 | 69 |
+| Sprint 3 original | 18 | 74 |
 | Historias adelantadas a Sprint 3 | 9 | 44 |
 
 Los 57 SP restantes (13 historias) corresponden al Sprint 4, cuyo objetivo es completar las 53 historias y 226 SP, con todos sus criterios probados, revisión, integración y evidencia de despliegue. No se han cambiado las estimaciones del Product Backlog.
@@ -27,6 +27,7 @@ Los 57 SP restantes (13 historias) corresponden al Sprint 4, cuyo objetivo es co
 | US35 | Registro manual de material externo | 3 | Jewelry | [tests/jewelry-certification.test.js](../../tests/jewelry-certification.test.js) |
 | US36 | Separación estricta de inventarios en UI | 5 | Jewelry | [tests/jewelry-certification.test.js](../../tests/jewelry-certification.test.js) |
 | US37 | Bloqueo de mezcla de inventarios | 5 | Jewelry | [tests/jewelry-certification.test.js](../../tests/jewelry-certification.test.js) |
+| US53 | Asociación de materiales a la joya (propuesta) | 5 | Jewelry | [tests/jewelry-certification.test.js](../../tests/jewelry-certification.test.js) |
 | US40 | Solicitud manual de certificado | 3 | Certification | [tests/jewelry-certification.test.js](../../tests/jewelry-certification.test.js) |
 | US41 | Validación de árbol genealógico | 8 | Certification | [tests/jewelry-certification.test.js](../../tests/jewelry-certification.test.js) |
 | US42 | Generación dinámica de PDF (Certificado) | 5 | Certification | [tests/jewelry-certification.test.js](../../tests/jewelry-certification.test.js) |
@@ -59,7 +60,6 @@ Los 57 SP restantes (13 historias) corresponden al Sprint 4, cuyo objetivo es co
 
 | Historia pendiente | Título | SP |
 | --- | --- | ---: |
-| US53 | Asociación de materiales a la joya (propuesta) | 5 |
 | US20 | Captura periódica de GPS en ruta | 5 |
 | US21 | Alerta por desvío geográfico | 5 |
 | US22 | Alerta por demora extrema | 3 |

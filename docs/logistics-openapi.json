@@ -886,7 +886,13 @@
                   "location": {
                     "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "weight",
+                  "weightUnit"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -1063,7 +1069,14 @@
                       "format": "uuid"
                     }
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "description",
+                  "severity",
+                  "photoIds"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -1233,7 +1246,12 @@
                     "type": "string",
                     "format": "uuid"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "recipientUserId"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -1399,7 +1417,12 @@
                     "type": "string",
                     "format": "uuid"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "delegationId"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -1567,7 +1590,11 @@
                   "reviewReason": {
                     "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -1740,7 +1767,14 @@
                   "reason": {
                     "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "restrictionId",
+                  "decision",
+                  "reason"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",

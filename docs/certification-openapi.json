@@ -315,7 +315,11 @@
                     "type": "string",
                     "format": "uuid"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "productId"
+                ]
               },
               "example": {
                 "operationId": "55555555-5555-4555-8555-555555555555",
@@ -948,7 +952,14 @@
                   "reason": {
                     "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "decision",
+                  "issuerName",
+                  "reason"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -1109,7 +1120,13 @@
                   "evidenceRef": {
                     "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "reason",
+                  "evidenceRef"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",

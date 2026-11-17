@@ -1,6 +1,6 @@
 # Matriz de criterios de aceptación
 
-La redacción conserva los criterios del informe base. Alcance seleccionado: 106 criterios en 40 historias. Estado actual: código disponible para revisión en PR #4/#27; cerrar cada criterio después de contrastar los resultados y aprobar la integración.
+La redacción conserva los criterios del informe base. Alcance seleccionado: 109 criterios en 40 historias. Estado actual: código disponible para revisión en PR #4/#27; cerrar cada criterio después de contrastar los resultados y aprobar la integración.
 
 | Criterio | Comportamiento requerido | Evidencia de verificación |
 | --- | --- | --- |
@@ -82,6 +82,9 @@ La redacción conserva los criterios del informe base. Alcance seleccionado: 106
 | US36-AC2 | Escenario 2. Dado un identificador de material, cuando lo busco, entonces puedo reconocer su categoría, cantidad y evidencia disponible. | [Jewelry: suite](../../tests/jewelry-certification.test.js); [inventario UI](https://github.com/XTRACTA-EventOre/eventore/blob/feature/sprint2-access-custody/e2e/sprint3.spec.js) |
 | US37-AC1 | Escenario 1. Dada una combinación prohibida de material documentado y externo, cuando intento confirmar la asignación al producto, entonces se bloquea y se explica la incompatibilidad. | [Jewelry: suite](../../tests/jewelry-certification.test.js) |
 | US37-AC2 | Escenario 2. Dados materiales compatibles con la regla de procedencia, cuando confirmo la asignación, entonces se permite conservar la composición, pero la certificación sigue sujeta a la revisión de evidencias. | [Jewelry: suite](../../tests/jewelry-certification.test.js) |
+| US53-AC1 | Escenario 1. Dadas existencias disponibles y una composición permitida, cuando confirmo la asignación, entonces se registran producto, material y cantidad sin superar existencias ni consumirlas dos veces. | [Jewelry: suite](../../tests/jewelry-certification.test.js) |
+| US53-AC2 | Escenario 2. Dada una combinación prohibida por US37, cuando intento confirmar, entonces se rechaza la asignación y se explica el motivo. | [Jewelry: suite](../../tests/jewelry-certification.test.js) |
+| US53-AC3 | Escenario 3. Dada una corrección de composición, cuando la registro, entonces se conserva la asignación anterior, la nueva y el motivo, y se exige revisar el efecto sobre certificados existentes. | [Jewelry: suite](../../tests/jewelry-certification.test.js) |
 | US40-AC1 | Escenario 1. Dada una joya con materiales asociados, cuando envío una solicitud completa, entonces queda registrada en PendingReview para evaluar su elegibilidad. | [Certification: suite](../../tests/jewelry-certification.test.js) |
 | US40-AC2 | Escenario 2. Dada una composición prohibida o evidencia insuficiente, cuando se evalúa la solicitud, entonces no se emite un certificado válido y se informan los motivos. | [Certification: suite](../../tests/jewelry-certification.test.js) |
 | US40-AC3 | Escenario 3. Dado que se completó una revisión favorable de todas las condiciones, cuando se autoriza la emisión, entonces el certificado pasa a Issued con su versión de evidencia y emisor. | [Certification: suite](../../tests/jewelry-certification.test.js) |

@@ -485,13 +485,79 @@
               "application/json": {
                 "example": {
                   "roles": {
+                    "Administrator": [
+                      "devices.manage",
+                      "devices.disable",
+                      "reporting.read",
+                      "reporting.export",
+                      "geofences.manage",
+                      "users.manage",
+                      "lots.read",
+                      "lots.register",
+                      "lots.cancel",
+                      "lots.release",
+                      "shipments.checkpoint",
+                      "shipments.report",
+                      "shipments.review",
+                      "shipments.receive",
+                      "shipments.weigh",
+                      "shipments.supervise",
+                      "processing.manage",
+                      "inventory.manage",
+                      "certificates.request",
+                      "certificates.read",
+                      "certificates.review",
+                      "certificates.revoke",
+                      "evidence.review"
+                    ],
+                    "Supervisor": [
+                      "devices.manage",
+                      "reporting.read",
+                      "reporting.export",
+                      "geofences.manage",
+                      "lots.read",
+                      "lots.register",
+                      "lots.cancel",
+                      "lots.release",
+                      "shipments.checkpoint",
+                      "shipments.review",
+                      "shipments.weigh",
+                      "shipments.supervise"
+                    ],
                     "Operator": [
                       "lots.read",
                       "lots.register"
                     ],
                     "Transporter": [
                       "lots.read",
-                      "custody.accept"
+                      "custody.accept",
+                      "shipments.checkpoint",
+                      "shipments.report",
+                      "shipments.delegate"
+                    ],
+                    "Viewer": [
+                      "lots.read"
+                    ],
+                    "PlantOperator": [
+                      "reporting.read",
+                      "lots.read",
+                      "shipments.checkpoint",
+                      "shipments.weigh",
+                      "shipments.receive",
+                      "shipments.review",
+                      "processing.manage"
+                    ],
+                    "Jeweler": [
+                      "lots.read",
+                      "inventory.manage",
+                      "certificates.request",
+                      "certificates.read"
+                    ],
+                    "Certifier": [
+                      "lots.read",
+                      "evidence.review",
+                      "certificates.review",
+                      "certificates.read"
                     ]
                   }
                 }
@@ -1606,7 +1672,13 @@
                   "location": {
                     "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "weight",
+                  "weightUnit"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -1783,7 +1855,14 @@
                       "format": "uuid"
                     }
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "description",
+                  "severity",
+                  "photoIds"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -1953,7 +2032,12 @@
                     "type": "string",
                     "format": "uuid"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "recipientUserId"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -2119,7 +2203,12 @@
                     "type": "string",
                     "format": "uuid"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "delegationId"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -2287,7 +2376,11 @@
                   "reviewReason": {
                     "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -2460,7 +2553,14 @@
                   "reason": {
                     "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "restrictionId",
+                  "decision",
+                  "reason"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -2630,7 +2730,13 @@
                   "reason": {
                     "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "reviewStatus",
+                  "reason"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -3177,7 +3283,11 @@
                   "expectedVersion": {
                     "type": "integer"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -3352,7 +3462,13 @@
                     "type": "string",
                     "nullable": true
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "purity",
+                  "evidenceRef"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -3532,7 +3648,16 @@
                   "evidenceRef": {
                     "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "netWeight",
+                  "weightUnit",
+                  "removedKind",
+                  "reason",
+                  "evidenceRef"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -3707,7 +3832,14 @@
                   "reason": {
                     "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "lossWeight",
+                  "weightUnit",
+                  "reason"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -3770,7 +3902,7 @@
                   "operationId": "33333333-3333-4333-8333-333333333333",
                   "lotId": "22222222-2222-4222-8222-222222222222",
                   "action": "LotsTransformed",
-                  "status": "Processing",
+                  "status": "Consumed",
                   "version": 4
                 }
               }
@@ -3939,7 +4071,13 @@
                       }
                     }
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "inputs",
+                  "plan"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -4135,7 +4273,12 @@
                   "reviewNote": {
                     "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "reviewNote"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -4456,7 +4599,12 @@
                     "type": "string",
                     "format": "uuid"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "qrLotId"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -4622,7 +4770,14 @@
                   "source": {
                     "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "mineralType",
+                  "weight",
+                  "weightUnit",
+                  "source"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -4919,7 +5074,13 @@
                       }
                     }
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "name",
+                  "reason",
+                  "allocations"
+                ]
               },
               "example": {
                 "operationId": "55555555-5555-4555-8555-555555555555",
@@ -5262,7 +5423,14 @@
                       }
                     }
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "name",
+                  "reason",
+                  "allocations"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -5449,7 +5617,11 @@
                     "type": "string",
                     "format": "uuid"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "productId"
+                ]
               },
               "example": {
                 "operationId": "55555555-5555-4555-8555-555555555555",
@@ -6082,7 +6254,14 @@
                   "reason": {
                     "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "decision",
+                  "issuerName",
+                  "reason"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -6243,7 +6422,13 @@
                   "evidenceRef": {
                     "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "reason",
+                  "evidenceRef"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -6927,7 +7112,13 @@
                     "type": "string",
                     "format": "uuid"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "serial",
+                  "name",
+                  "lotId"
+                ]
               },
               "example": {
                 "operationId": "22222222-2222-4222-8222-222222222222",
@@ -7396,7 +7587,14 @@
                   "evidenceRef": {
                     "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "calibratedAt",
+                  "expiresAt",
+                  "evidenceRef"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -7557,7 +7755,13 @@
                   "acknowledgeOperationalImpact": {
                     "type": "boolean"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "reason",
+                  "acknowledgeOperationalImpact"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -7737,7 +7941,13 @@
                   "battery": {
                     "type": "integer"
                   }
-                }
+                },
+                "required": [
+                  "eventId",
+                  "weight",
+                  "weightUnit",
+                  "battery"
+                ]
               },
               "example": {
                 "eventId": "33333333-3333-4333-8333-333333333333",
@@ -8079,7 +8289,15 @@
                       }
                     }
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "name",
+                  "source",
+                  "authorizationRef",
+                  "confirmAuthorization",
+                  "polygon"
+                ]
               },
               "example": {
                 "operationId": "22222222-2222-4222-8222-222222222222",
@@ -8415,7 +8633,12 @@
                   "reason": {
                     "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "reason"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -9095,7 +9318,12 @@
                   "to": {
                     "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "from",
+                  "to"
+                ]
               },
               "example": {
                 "operationId": "22222222-2222-4222-8222-222222222222",

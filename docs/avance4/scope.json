@@ -2,7 +2,7 @@
   "totalStoryPoints": 226,
   "implementedStoryPoints": 169,
   "implementedPercent": 74.78,
-  "criteriaCount": 106,
+  "criteriaCount": 109,
   "stories": [
     {
       "id": "US12",
@@ -84,6 +84,13 @@
     {
       "id": "US37",
       "title": "Bloqueo de mezcla de inventarios",
+      "points": 5,
+      "service": "Jewelry",
+      "status": "In review"
+    },
+    {
+      "id": "US53",
+      "title": "Asociación de materiales a la joya (propuesta)",
       "points": 5,
       "service": "Jewelry",
       "status": "In review"
@@ -279,11 +286,6 @@
     }
   ],
   "sprint4": [
-    {
-      "id": "US53",
-      "title": "Asociación de materiales a la joya (propuesta)",
-      "points": 5
-    },
     {
       "id": "US20",
       "title": "Captura periódica de GPS en ruta",

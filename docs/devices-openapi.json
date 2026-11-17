@@ -483,7 +483,13 @@
                     "type": "string",
                     "format": "uuid"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "serial",
+                  "name",
+                  "lotId"
+                ]
               },
               "example": {
                 "operationId": "22222222-2222-4222-8222-222222222222",
@@ -952,7 +958,14 @@
                   "evidenceRef": {
                     "type": "string"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "calibratedAt",
+                  "expiresAt",
+                  "evidenceRef"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -1113,7 +1126,13 @@
                   "acknowledgeOperationalImpact": {
                     "type": "boolean"
                   }
-                }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "reason",
+                  "acknowledgeOperationalImpact"
+                ]
               },
               "example": {
                 "operationId": "33333333-3333-4333-8333-333333333333",
@@ -1293,7 +1312,13 @@
                   "battery": {
                     "type": "integer"
                   }
-                }
+                },
+                "required": [
+                  "eventId",
+                  "weight",
+                  "weightUnit",
+                  "battery"
+                ]
               },
               "example": {
                 "eventId": "33333333-3333-4333-8333-333333333333",
