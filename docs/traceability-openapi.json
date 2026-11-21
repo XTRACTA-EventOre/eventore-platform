@@ -1,0 +1,1443 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "EventOre Traceability",
+    "version": "1.3.0",
+    "description": "Ocho servicios con MySQL 8.4 independiente: Identity, Traceability, Logistics, Processing, Jewelry, Certification, Devices y Reporting. La cookie se obtiene mediante login. Los reportes de dispositivos usan Bearer propio. Los comandos conservan operationId y cuerpo ante fallos sin confirmación. Los ejemplos son datos de prueba, no credenciales."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "session": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "eventore_session"
+      },
+      "deviceBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "Payload": {
+        "type": "object",
+        "required": [
+          "mineralType",
+          "weight",
+          "weightUnit",
+          "originEvidence"
+        ],
+        "properties": {
+          "mineralType": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "string",
+            "example": "125.50",
+            "description": "Exact positive decimal string: at most 35 integer digits and 30 fractional digits; INVALID_WEIGHT_PRECISION if exceeded.",
+            "maxLength": 66
+          },
+          "weightUnit": {
+            "type": "string",
+            "enum": [
+              "g",
+              "kg",
+              "t"
+            ]
+          },
+          "originEvidence": {
+            "type": "object",
+            "required": [
+              "reference",
+              "source"
+            ],
+            "properties": {
+              "reference": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              }
+            }
+          },
+          "location": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "latitude": {
+                "type": "number",
+                "minimum": -90,
+                "maximum": 90
+              },
+              "longitude": {
+                "type": "number",
+                "minimum": -180,
+                "maximum": 180
+              }
+            }
+          },
+          "concessionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        }
+      },
+      "Event": {
+        "type": "object",
+        "required": [
+          "clientEventId",
+          "eventType",
+          "occurredAt",
+          "dependencies",
+          "payload"
+        ],
+        "properties": {
+          "clientEventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventType": {
+            "type": "string",
+            "enum": [
+              "LotRegistered"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp, years 1000-9999 in UTC, at most six fractional second digits."
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Empty for LotRegistered in Sprint 1"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/Payload"
+          }
+        }
+      },
+      "Outcome": {
+        "type": "object",
+        "properties": {
+          "clientEventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Accepted",
+              "AlreadyProcessed",
+              "Conflict",
+              "Rejected"
+            ]
+          },
+          "lotId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/lots": {
+      "post": {
+        "summary": "Register mineral lot",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "allOf": [
+                  {
+                    "$ref": "#/components/schemas/Payload"
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "clientEventId"
+                    ],
+                    "properties": {
+                      "clientEventId": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Already processed"
+          },
+          "201": {
+            "description": "Registered lot: lotId, status, version, originEvidenceStatus"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "409": {
+            "description": "Conflicting replay"
+          },
+          "503": {
+            "description": "Service unavailable"
+          }
+        },
+        "tags": [
+          "Traceability"
+        ]
+      }
+    },
+    "/lots/{lotId}": {
+      "get": {
+        "summary": "Read lot within own organization",
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current lot: lotId, mineralType, weight, weightUnit, status, version, originEvidenceStatus, transportStatus, qrProvesOrigin"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "404": {
+            "description": "Not found in organization"
+          },
+          "503": {
+            "description": "Service unavailable"
+          }
+        },
+        "tags": [
+          "Traceability"
+        ]
+      }
+    },
+    "/lots/{lotId}/qr": {
+      "get": {
+        "summary": "QR linking to authenticated application lookup",
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "QR image",
+            "content": {
+              "image/png": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "409": {
+            "description": "Cancelled lot"
+          },
+          "503": {
+            "description": "Service unavailable"
+          }
+        },
+        "tags": [
+          "Traceability"
+        ]
+      }
+    },
+    "/events/synchronize": {
+      "post": {
+        "summary": "Process events idempotently",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "sourceId",
+                  "events"
+                ],
+                "properties": {
+                  "sourceId": {
+                    "type": "string"
+                  },
+                  "events": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                      "$ref": "#/components/schemas/Event"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Per-event outcomes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "results": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Outcome"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "503": {
+            "description": "Service unavailable"
+          }
+        },
+        "tags": [
+          "Traceability"
+        ]
+      }
+    },
+    "/lots/{lotId}/cancellation": {
+      "post": {
+        "summary": "Cancelar un lote Registered conservando actor, fecha y motivo",
+        "tags": [
+          "Traceability"
+        ],
+        "x-permission": "lots.cancel",
+        "responses": {
+          "200": {
+            "description": "Operación confirmada",
+            "content": {
+              "application/json": {
+                "example": {
+                  "operationId": "33333333-3333-4333-8333-333333333333",
+                  "lotId": "22222222-2222-4222-8222-222222222222",
+                  "status": "Cancelled",
+                  "version": 2,
+                  "actorId": "44444444-4444-4444-8444-444444444444",
+                  "action": "Cancelled",
+                  "reason": "Registro duplicado",
+                  "occurredAt": "2026-11-14T15:00:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Sesión requerida"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "404": {
+            "description": "Recurso no visible en la organización"
+          },
+          "409": {
+            "description": "Versión/estado incompatible, último administrador o identificador reutilizado"
+          },
+          "503": {
+            "description": "Operación no confirmada; reintentar conservando operationId y el cuerpo original"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "operationId": "33333333-3333-4333-8333-333333333333",
+                "expectedVersion": 1,
+                "reason": "Registro duplicado"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/lots/{lotId}/handovers": {
+      "post": {
+        "summary": "Preparar entrega válida durante 24 horas; sustituye la anterior",
+        "tags": [
+          "Traceability"
+        ],
+        "x-permission": "lots.release",
+        "responses": {
+          "201": {
+            "description": "Operación confirmada",
+            "content": {
+              "application/json": {
+                "example": {
+                  "operationId": "33333333-3333-4333-8333-333333333333",
+                  "lotId": "22222222-2222-4222-8222-222222222222",
+                  "status": "Registered",
+                  "version": 2,
+                  "actorId": "44444444-4444-4444-8444-444444444444",
+                  "action": "HandoverPrepared",
+                  "occurredAt": "2026-11-14T15:00:00.000Z",
+                  "handoverId": "55555555-5555-4555-8555-555555555555",
+                  "recipientUserId": null,
+                  "expiresAt": "2026-11-15T15:00:00.000Z"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Sesión requerida"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "404": {
+            "description": "Recurso no visible en la organización"
+          },
+          "409": {
+            "description": "Versión/estado incompatible, último administrador o identificador reutilizado"
+          },
+          "503": {
+            "description": "Operación no confirmada; reintentar conservando operationId y el cuerpo original"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "operationId": "33333333-3333-4333-8333-333333333333",
+                "expectedVersion": 1,
+                "recipientUserId": null
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/lots/{lotId}/operations": {
+      "get": {
+        "summary": "Historial, entrega disponible y restricciones activas",
+        "tags": [
+          "Traceability"
+        ],
+        "x-permission": "lots.read",
+        "responses": {
+          "200": {
+            "description": "Operación confirmada",
+            "content": {
+              "application/json": {
+                "example": {
+                  "history": [
+                    {
+                      "operationId": "33333333-3333-4333-8333-333333333333",
+                      "lotId": "22222222-2222-4222-8222-222222222222",
+                      "status": "Cancelled",
+                      "version": 2,
+                      "actorId": "44444444-4444-4444-8444-444444444444",
+                      "action": "Cancelled",
+                      "reason": "Registro duplicado",
+                      "occurredAt": "2026-11-14T15:00:00.000Z"
+                    }
+                  ],
+                  "handovers": [],
+                  "restrictions": []
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Sesión requerida"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "404": {
+            "description": "Recurso no visible en la organización"
+          },
+          "409": {
+            "description": "Versión/estado incompatible, último administrador o identificador reutilizado"
+          },
+          "503": {
+            "description": "Operación no confirmada; reintentar conservando operationId y el cuerpo original"
+          }
+        },
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/lots/{lotId}/evidence-review": {
+      "post": {
+        "summary": "Revisión explícita de evidencia de origen",
+        "tags": [
+          "Traceability"
+        ],
+        "description": "La aprobación requiere resolver una declaración geográfica fuera del polígono o pendiente de comprobación. El registro y el QR nunca aprueban por sí solos el origen.",
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "operationId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "lotId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "action": {
+                      "type": "string"
+                    },
+                    "reviewStatus": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "example": {
+                  "operationId": "33333333-3333-4333-8333-333333333333",
+                  "lotId": "22222222-2222-4222-8222-222222222222",
+                  "action": "EvidenceReviewed",
+                  "reviewStatus": "Verified",
+                  "version": 4
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Datos inválidos"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación requerida",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Autenticación requerida"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso u origen no autorizado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Permiso u origen no autorizado"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible para la organización",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Recurso no visible para la organización"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado, versión, evidencia o balance incompatible",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Estado, versión, evidencia o balance incompatible"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio u operación sin confirmar; conservar identificador original",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio u operación sin confirmar; conservar identificador original"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_lots_lotId_evidence_review",
+        "x-permission": "evidence.review",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operationId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expectedVersion": {
+                    "type": "integer"
+                  },
+                  "reviewStatus": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "reviewStatus",
+                  "reason"
+                ]
+              },
+              "example": {
+                "operationId": "33333333-3333-4333-8333-333333333333",
+                "expectedVersion": 3,
+                "reviewStatus": "Verified",
+                "reason": "Documentos y genealogía cotejados"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/geofences": {
+      "get": {
+        "summary": "Consultar polígonos con fuente y autorización identificadas",
+        "tags": [
+          "Traceability"
+        ],
+        "description": "Consultar polígonos con fuente y autorización identificadas",
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "concessions": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "string"
+                          },
+                          "authorizationRef": {
+                            "type": "string"
+                          },
+                          "polygon": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "latitude": {
+                                  "type": "integer"
+                                },
+                                "longitude": {
+                                  "type": "integer"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "concessions": [
+                    {
+                      "id": "22222222-2222-4222-8222-222222222222",
+                      "name": "Concesión de prueba",
+                      "source": "Fuente cartográfica",
+                      "authorizationRef": "AUT-001",
+                      "polygon": [
+                        {
+                          "latitude": -13,
+                          "longitude": -77
+                        },
+                        {
+                          "latitude": -13,
+                          "longitude": -76
+                        },
+                        {
+                          "latitude": -12,
+                          "longitude": -76
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Datos inválidos"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación requerida",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Autenticación requerida"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso u origen no autorizado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Permiso u origen no autorizado"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible para la organización",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Recurso no visible para la organización"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado, versión, evidencia o balance incompatible",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Estado, versión, evidencia o balance incompatible"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio u operación sin confirmar; conservar identificador original",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio u operación sin confirmar; conservar identificador original"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_geofences",
+        "x-permission": "lots.read"
+      },
+      "post": {
+        "summary": "Registrar polígono revisado por un responsable autorizado",
+        "tags": [
+          "Traceability"
+        ],
+        "description": "Registrar polígono revisado por un responsable autorizado",
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "concessionId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "vertexCount": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "example": {
+                  "concessionId": "22222222-2222-4222-8222-222222222222",
+                  "status": "Authorized",
+                  "vertexCount": 3
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Datos inválidos"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación requerida",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Autenticación requerida"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso u origen no autorizado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Permiso u origen no autorizado"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible para la organización",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Recurso no visible para la organización"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado, versión, evidencia o balance incompatible",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Estado, versión, evidencia o balance incompatible"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio u operación sin confirmar; conservar identificador original",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio u operación sin confirmar; conservar identificador original"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_geofences",
+        "x-permission": "geofences.manage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operationId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string"
+                  },
+                  "authorizationRef": {
+                    "type": "string"
+                  },
+                  "confirmAuthorization": {
+                    "type": "boolean"
+                  },
+                  "polygon": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "latitude": {
+                          "type": "integer"
+                        },
+                        "longitude": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "operationId",
+                  "name",
+                  "source",
+                  "authorizationRef",
+                  "confirmAuthorization",
+                  "polygon"
+                ]
+              },
+              "example": {
+                "operationId": "22222222-2222-4222-8222-222222222222",
+                "name": "Concesión",
+                "source": "Fuente cartográfica verificable",
+                "authorizationRef": "AUT-001",
+                "confirmAuthorization": true,
+                "polygon": [
+                  {
+                    "latitude": -13,
+                    "longitude": -77
+                  },
+                  {
+                    "latitude": -13,
+                    "longitude": -76
+                  },
+                  {
+                    "latitude": -12,
+                    "longitude": -76
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/lots/{lotId}/geofence": {
+      "get": {
+        "summary": "Consultar declaración y comprobaciones geográficas",
+        "tags": [
+          "Traceability"
+        ],
+        "description": "Consultar declaración y comprobaciones geográficas",
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "lotId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "capture": {
+                      "type": "object",
+                      "properties": {
+                        "location": {
+                          "type": "string",
+                          "nullable": true
+                        },
+                        "concessionId": {
+                          "type": "string",
+                          "format": "uuid"
+                        }
+                      }
+                    },
+                    "history": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "lotId": "22222222-2222-4222-8222-222222222222",
+                  "status": "PendingCheck",
+                  "capture": {
+                    "location": null,
+                    "concessionId": "55555555-5555-4555-8555-555555555555"
+                  },
+                  "history": []
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Datos inválidos"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación requerida",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Autenticación requerida"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso u origen no autorizado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Permiso u origen no autorizado"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible para la organización",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Recurso no visible para la organización"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado, versión, evidencia o balance incompatible",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Estado, versión, evidencia o balance incompatible"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio u operación sin confirmar; conservar identificador original",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio u operación sin confirmar; conservar identificador original"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_lots_lotId_geofence",
+        "x-permission": "lots.read",
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Comparar punto contra polígono autorizado identificado",
+        "tags": [
+          "Traceability"
+        ],
+        "description": "Inside/Outside/PendingCheck, con fuente y versión. Un resultado fuera o pendiente impide aprobar esa declaración de origen. Estar dentro no aprueba por sí solo evidencia. Se incluyen bordes. Se rechazan polígonos degenerados, cruzados o que atraviesen el antimeridiano; deben dividirse previamente.",
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "lotId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "operationId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "originApproved": {
+                      "type": "boolean"
+                    },
+                    "version": {
+                      "type": "integer"
+                    },
+                    "source": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "lotId": "22222222-2222-4222-8222-222222222222",
+                  "operationId": "33333333-3333-4333-8333-333333333333",
+                  "status": "Inside",
+                  "originApproved": false,
+                  "version": 4,
+                  "source": "Fuente cartográfica verificable"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Datos inválidos"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación requerida",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Autenticación requerida"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso u origen no autorizado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Permiso u origen no autorizado"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible para la organización",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Recurso no visible para la organización"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado, versión, evidencia o balance incompatible",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Estado, versión, evidencia o balance incompatible"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio u operación sin confirmar; conservar identificador original",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio u operación sin confirmar; conservar identificador original"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_lots_lotId_geofence",
+        "x-permission": "evidence.review",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operationId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expectedVersion": {
+                    "type": "integer"
+                  },
+                  "location": {
+                    "type": "object",
+                    "properties": {
+                      "latitude": {
+                        "type": "number"
+                      },
+                      "longitude": {
+                        "type": "number"
+                      }
+                    }
+                  },
+                  "concessionId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "reason"
+                ]
+              },
+              "example": {
+                "operationId": "33333333-3333-4333-8333-333333333333",
+                "expectedVersion": 3,
+                "location": {
+                  "latitude": -12.5,
+                  "longitude": -76.5
+                },
+                "concessionId": "55555555-5555-4555-8555-555555555555",
+                "reason": "Contraste con la fuente"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

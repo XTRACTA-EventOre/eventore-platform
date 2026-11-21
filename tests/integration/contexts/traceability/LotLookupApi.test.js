@@ -39,7 +39,7 @@ function createReadModel(overrides = {}) {
 }
 
 function authenticatedMiddleware(req, res, next) {
-    req.identity = {
+    req.identity = { permissions: ['lots.read','lots.register'],
         tenantId: TENANT_ID,
         userId: 'supervisor-01'
     };

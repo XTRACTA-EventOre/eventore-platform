@@ -1,6 +1,7 @@
 import { randomBytes, scrypt as derive, timingSafeEqual, createHash } from 'node:crypto';
 import { promisify } from 'node:util';
 import { Router } from 'express';
+import { accessForRoles } from './permissions.js';
 
 const scrypt = promisify(derive);
 const digest = value => createHash('sha256').update(value).digest('hex');
@@ -36,7 +37,11 @@ export function createSessionAuth({ pool, appBaseUrl, secure = false }) {
   const options = { httpOnly: true, sameSite: 'strict', secure, path: '/', maxAge: lifetime };
   const unauthorized = res => res.status(401).json({ error: {
     code: 'UNAUTHORIZED', message: 'Inicia sesión para continuar' } });
-  const identity = row => ({ userId: row.id, tenantId: row.tenant_id, email: row.email });
+  const identity = async (db, row) => {
+    const [roles] = await db.execute('SELECT role_name FROM app_user_roles WHERE user_id=? ORDER BY role_name', [row.id]);
+    return { userId: row.id, tenantId: row.tenant_id, email: row.email,
+      ...accessForRoles(roles.map(role => role.role_name)) };
+  };
   const unavailable = res => res.status(503).json({ error: {
     code: 'AUTH_UNAVAILABLE', message: 'Autenticación temporalmente no disponible' } });
   const authenticate = async (req, res, next) => {
@@ -48,7 +53,7 @@ export function createSessionAuth({ pool, appBaseUrl, secure = false }) {
         FROM app_sessions s JOIN app_users u ON u.id=s.user_id
         WHERE s.token_hash=? AND s.expires_at>UTC_TIMESTAMP(3) AND u.active=true`, [digest(token)]);
       if (!rows[0]) return unauthorized(res);
-      req.identity = identity(rows[0]);
+      req.identity = await identity(pool, rows[0]);
       next();
     } catch { return unavailable(res); }
   };
@@ -64,14 +69,14 @@ export function createSessionAuth({ pool, appBaseUrl, secure = false }) {
     if (!pool) return unavailable(res);
     const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
     const password = req.body?.password;
-    if (!email || email.length > 254 || typeof password !== 'string' || password.length > 128) return unauthorized(res);
+    if (!email || email.length > 254 || typeof password !== 'string' || password.length > 128) return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'No se pudo iniciar sesión. Comprueba tus credenciales; después de tres intentos fallidos espera quince minutos o contacta al administrador para recuperar el acceso.' } });
     let tx;
     try {
       tx = await pool.getConnection(); await tx.beginTransaction();
       const [rows] = await tx.execute('SELECT * FROM app_users WHERE email=? FOR UPDATE', [email]);
       const user = rows[0];
       if (!user || !user.active || (user.locked_until && new Date(user.locked_until) > new Date())) {
-        await tx.commit(); return unauthorized(res);
+        await tx.commit(); return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'No se pudo iniciar sesión. Comprueba tus credenciales; después de tres intentos fallidos espera quince minutos o contacta al administrador para recuperar el acceso.' } });
       }
       if (!await verifyPassword(password, user.password_hash)) {
         const expired = user.locked_until && new Date(user.locked_until) <= new Date();
@@ -79,15 +84,16 @@ export function createSessionAuth({ pool, appBaseUrl, secure = false }) {
         const lockedUntil = attempts >= 3 ? new Date(Date.now() + 15 * 60 * 1000) : null;
         await tx.execute('UPDATE app_users SET failed_attempts=?,locked_until=? WHERE id=?',
           [attempts, lockedUntil, user.id]);
-        await tx.commit(); return unauthorized(res);
+        await tx.commit(); return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'No se pudo iniciar sesión. Comprueba tus credenciales; después de tres intentos fallidos espera quince minutos o contacta al administrador para recuperar el acceso.' } });
       }
       await tx.execute('UPDATE app_users SET failed_attempts=0,locked_until=NULL WHERE id=?', [user.id]);
       await tx.execute('DELETE FROM app_sessions WHERE expires_at<=UTC_TIMESTAMP(3)');
       const token = randomBytes(32).toString('hex');
       await tx.execute('INSERT INTO app_sessions(token_hash,user_id,expires_at) VALUES(?,?,?)',
         [digest(token), user.id, new Date(Date.now() + lifetime)]);
+      const currentIdentity = await identity(tx, user);
       await tx.commit();
-      res.cookie(cookieName, token, options).json({ identity: identity(user) });
+      res.cookie(cookieName, token, options).json({ identity: currentIdentity });
     } catch { if (tx) await tx.rollback().catch(() => {}); return unavailable(res); }
     finally { tx?.release(); }
   });

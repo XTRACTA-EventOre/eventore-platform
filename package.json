@@ -14,7 +14,21 @@
     "migrate:identity": "node scripts/migrate-service.js identity",
     "migrate:traceability": "node scripts/migrate-service.js traceability",
     "user:create": "node scripts/create-user.js",
-    "smoke": "node scripts/smoke-microservices.js"
+    "smoke": "node scripts/smoke-microservices.js",
+    "start:logistics": "node init && node src/services/logistics/server.js",
+    "migrate:logistics": "node scripts/migrate-service.js logistics",
+    "user:roles": "node scripts/set-user-roles.js",
+    "smoke:sprint2": "node scripts/smoke-sprint2.js",
+    "start:processing": "node init && node src/services/processing/server.js",
+    "migrate:processing": "node scripts/migrate-service.js processing",
+    "start:jewelry": "node init && node src/services/jewelry/server.js",
+    "migrate:jewelry": "node scripts/migrate-service.js jewelry",
+    "start:certification": "node init && node src/services/certification/server.js",
+    "migrate:certification": "node scripts/migrate-service.js certification",
+    "start:devices": "node init && node src/services/devices/server.js",
+    "migrate:devices": "node scripts/migrate-service.js devices",
+    "start:reporting": "node init && node src/services/reporting/server.js",
+    "migrate:reporting": "node scripts/migrate-service.js reporting"
   },
   "keywords": [],
   "author": "",
@@ -24,9 +38,12 @@
     "dotenv": "^18.0.6",
     "express": "^5.2.1",
     "mysql2": "^3.24.6",
-    "qrcode": "^1.5.4"
+    "pdfkit": "0.17.2",
+    "qrcode": "^1.5.4",
+    "swagger-ui-dist": "5.35.0"
   },
   "devDependencies": {
+    "@apidevtools/swagger-parser": "13.1.0",
     "jest": "^30.5.2",
     "jsqr": "^1.4.0",
     "nodemon": "^3.1.14",

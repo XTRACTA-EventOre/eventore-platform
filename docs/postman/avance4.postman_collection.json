@@ -1,0 +1,1293 @@
+{
+  "info": {
+    "name": "EventOre Avance 4 ejecución reproducible",
+    "description": "Colección para instalación desechable con cuentas *-smoke. No guarda contraseñas ni cookies. Definir baseUrl y password al ejecutar. Crea y revoca datos de prueba. La ejecución Newman es evidencia de la colección; no se afirma una captura de la aplicación gráfica Postman.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000"
+    }
+  ],
+  "item": [
+    {
+      "name": "Gateway health",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "health"
+          ]
+        },
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Gateway health: HTTP 200',()=>pm.response.to.have.status(200));",
+              "pm.test('Gateway disponible',()=>pm.expect(pm.response.json().service).to.eql('gateway'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login admin",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin-smoke@example.test\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login admin: HTTP 200',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Registrar lote declarado",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/lots",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "lots"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"clientEventId\": \"{{$guid}}\",\n  \"mineralType\": \"Gold\",\n  \"weight\": \"100\",\n  \"weightUnit\": \"kg\",\n  \"originEvidence\": {\n    \"reference\": \"POSTMAN-AVANCE4\",\n    \"source\": \"Origen de prueba documentado\"\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Registrar lote declarado: HTTP 201',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json();",
+              "pm.collectionVariables.set('lotId',body.lotId);",
+              "pm.collectionVariables.set('version',body.version);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Preparar entrega",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/lots/{{lotId}}/handovers",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "lots",
+            "{{lotId}}",
+            "handovers"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operationId\": \"{{$guid}}\",\n  \"expectedVersion\": {{version}},\n  \"recipientUserId\": null\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Preparar entrega: HTTP 201',()=>pm.response.to.have.status(201));",
+              "const body=pm.response.json();",
+              "pm.collectionVariables.set('handoverId',body.handoverId);",
+              "pm.collectionVariables.set('version',body.version);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login carrier",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"carrier-smoke@example.test\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login carrier: HTTP 200',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Aceptar custodia",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/custody/lots/{{lotId}}/accept",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "custody",
+            "lots",
+            "{{lotId}}",
+            "accept"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operationId\": \"{{$guid}}\",\n  \"expectedVersion\": {{version}},\n  \"handoverId\": \"{{handoverId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Aceptar custodia: HTTP 200',()=>pm.response.to.have.status(200));",
+              "const body=pm.response.json();",
+              "pm.collectionVariables.set('version',body.version);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Checkpoint critico diez por ciento",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/shipments/lots/{{lotId}}/checkpoints",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "shipments",
+            "lots",
+            "{{lotId}}",
+            "checkpoints"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operationId\": \"{{$guid}}\",\n  \"expectedVersion\": {{version}},\n  \"weight\": \"90\",\n  \"weightUnit\": \"kg\",\n  \"location\": \"Control Postman\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Checkpoint critico diez por ciento: HTTP 200',()=>pm.response.to.have.status(200));",
+              "const body=pm.response.json();",
+              "pm.collectionVariables.set('version',body.version);",
+              "pm.collectionVariables.set('restrictionId',body.restrictionId);",
+              "pm.test('Discrepancia requiere investigación',()=>pm.expect(body.comparison.critical).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login plant",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"plant-smoke@example.test\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login plant: HTTP 200',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "No recibir sin decisión de cuarentena",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/shipments/lots/{{lotId}}/receipt",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "shipments",
+            "lots",
+            "{{lotId}}",
+            "receipt"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operationId\": \"{{$guid}}\",\n  \"expectedVersion\": {{version}}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('No recibir sin decisión de cuarentena: HTTP 409',()=>pm.response.to.have.status(409));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recibir conservando cuarentena",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/shipments/lots/{{lotId}}/receipt",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "shipments",
+            "lots",
+            "{{lotId}}",
+            "receipt"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operationId\": \"{{$guid}}\",\n  \"expectedVersion\": {{version}},\n  \"quarantineDecision\": \"ReceiveUnderQuarantine\",\n  \"reviewReason\": \"Inspección segregada de demostración\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Recibir conservando cuarentena: HTTP 200',()=>pm.response.to.have.status(200));",
+              "const body=pm.response.json();",
+              "pm.collectionVariables.set('version',body.version);",
+              "pm.test('Cuarentena retenida',()=>pm.expect(body.quarantineRetained).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Revisión expresa de restricción",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/shipments/lots/{{lotId}}/restriction-review",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "shipments",
+            "lots",
+            "{{lotId}}",
+            "restriction-review"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operationId\": \"{{$guid}}\",\n  \"expectedVersion\": {{version}},\n  \"restrictionId\": \"{{restrictionId}}\",\n  \"decision\": \"Release\",\n  \"reason\": \"Inspección y balance contrastados\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Revisión expresa de restricción: HTTP 200',()=>pm.response.to.have.status(200));",
+              "const body=pm.response.json();",
+              "pm.collectionVariables.set('version',body.version);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Planta start",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/processing/lots/{{lotId}}/start",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "processing",
+            "lots",
+            "{{lotId}}",
+            "start"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operationId\": \"{{$guid}}\",\n  \"expectedVersion\": {{version}}\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Planta start: HTTP 200',()=>pm.response.to.have.status(200));",
+              "const body=pm.response.json();",
+              "pm.collectionVariables.set('version',body.version);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Planta assays",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/processing/lots/{{lotId}}/assays",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "processing",
+            "lots",
+            "{{lotId}}",
+            "assays"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operationId\": \"{{$guid}}\",\n  \"expectedVersion\": {{version}},\n  \"purity\": \"99.5\",\n  \"evidenceRef\": \"LAB-POSTMAN\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Planta assays: HTTP 200',()=>pm.response.to.have.status(200));",
+              "const body=pm.response.json();",
+              "pm.collectionVariables.set('version',body.version);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Planta purification",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/processing/lots/{{lotId}}/purification",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "processing",
+            "lots",
+            "{{lotId}}",
+            "purification"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operationId\": \"{{$guid}}\",\n  \"expectedVersion\": {{version}},\n  \"netWeight\": \"90\",\n  \"weightUnit\": \"kg\",\n  \"removedKind\": \"Impurities\",\n  \"reason\": \"Impurezas separadas\",\n  \"evidenceRef\": \"PROC-POSTMAN\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Planta purification: HTTP 200',()=>pm.response.to.have.status(200));",
+              "const body=pm.response.json();",
+              "pm.collectionVariables.set('version',body.version);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Planta complete",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/processing/lots/{{lotId}}/complete",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "processing",
+            "lots",
+            "{{lotId}}",
+            "complete"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operationId\": \"{{$guid}}\",\n  \"expectedVersion\": {{version}},\n  \"reviewNote\": \"Etapas, análisis y balance completos\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Planta complete: HTTP 200',()=>pm.response.to.have.status(200));",
+              "const body=pm.response.json();",
+              "pm.collectionVariables.set('version',body.version);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Genealogía completa",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/processing/lots/{{lotId}}/genealogy",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "processing",
+            "lots",
+            "{{lotId}}",
+            "genealogy"
+          ]
+        },
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Genealogía completa: HTTP 200',()=>pm.response.to.have.status(200));",
+              "pm.test('Una raíz identificada',()=>pm.expect(pm.response.json().roots).to.have.lengthOf(1));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login certifier",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"certifier-smoke@example.test\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login certifier: HTTP 200',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Revisar evidencia",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/lots/{{lotId}}/evidence-review",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "lots",
+            "{{lotId}}",
+            "evidence-review"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operationId\": \"{{$guid}}\",\n  \"expectedVersion\": {{version}},\n  \"reviewStatus\": \"Verified\",\n  \"reason\": \"Origen, análisis y proceso contrastados\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Revisar evidencia: HTTP 200',()=>pm.response.to.have.status(200));",
+              "const body=pm.response.json();",
+              "pm.collectionVariables.set('version',body.version);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login jeweler",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"jeweler-smoke@example.test\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login jeweler: HTTP 200',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recibir por QR coincidente",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/jewelry/lots/{{lotId}}/receipt",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "jewelry",
+            "lots",
+            "{{lotId}}",
+            "receipt"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operationId\": \"{{$guid}}\",\n  \"expectedVersion\": {{version}},\n  \"qrLotId\": \"{{lotId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Recibir por QR coincidente: HTTP 200',()=>pm.response.to.have.status(200));",
+              "const body=pm.response.json();",
+              "pm.collectionVariables.set('version',body.version);",
+              "pm.collectionVariables.set('materialId',body.materialId);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Componer joya con stock",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/jewelry/products",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "jewelry",
+            "products"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operationId\": \"{{$guid}}\",\n  \"name\": \"Anillo Postman Avance 4\",\n  \"reason\": \"Fabricación de demostración\",\n  \"allocations\": [\n    {\n      \"materialId\": \"{{materialId}}\",\n      \"weight\": \"10\",\n      \"weightUnit\": \"g\"\n    }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Componer joya con stock: HTTP 200',()=>pm.response.to.have.status(200));",
+              "const body=pm.response.json();",
+              "pm.collectionVariables.set('productId',body.productId);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Solicitar certificado",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/certificates",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "certificates"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operationId\": \"{{$guid}}\",\n  \"productId\": \"{{productId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Solicitar certificado: HTTP 200',()=>pm.response.to.have.status(200));",
+              "const body=pm.response.json();",
+              "pm.collectionVariables.set('certId',body.certificateId);",
+              "pm.collectionVariables.set('certVersion',body.version);",
+              "pm.test('Solicitud pendiente',()=>pm.expect(body.status).to.eql('PendingReview'));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login certifier",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"certifier-smoke@example.test\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login certifier: HTTP 200',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Emisión tras revisión favorable",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/certificates/{{certId}}/review",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "certificates",
+            "{{certId}}",
+            "review"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operationId\": \"{{$guid}}\",\n  \"expectedVersion\": {{certVersion}},\n  \"decision\": \"Issue\",\n  \"issuerName\": \"Emisor de prueba Postman\",\n  \"reason\": \"Genealogía y evidencia favorables\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Emisión tras revisión favorable: HTTP 200',()=>pm.response.to.have.status(200));",
+              "const body=pm.response.json();",
+              "pm.collectionVariables.set('certVersion',body.version);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Descargar PDF real",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/certificates/{{certId}}/pdf",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "certificates",
+            "{{certId}}",
+            "pdf"
+          ]
+        },
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Descargar PDF real: HTTP 200',()=>pm.response.to.have.status(200));",
+              "pm.test('Archivo PDF válido',()=>pm.expect(pm.response.text().startsWith('%PDF-')).to.eql(true));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Consulta pública vigente",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/public/certificates/{{certId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "public",
+            "certificates",
+            "{{certId}}"
+          ]
+        },
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Consulta pública vigente: HTTP 200',()=>pm.response.to.have.status(200));",
+              "pm.test('Vigencia confirmada',()=>pm.expect(pm.response.json().status).to.eql('Issued'));",
+              "pm.test('No publica datos privados',()=>{const text=pm.response.text();pm.expect(text).not.to.include('tenant_id');pm.expect(text).not.to.include('actorId');pm.expect(text).not.to.include('POSTMAN-AVANCE4');});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login admin",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "auth",
+            "login"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin-smoke@example.test\",\n  \"password\": \"{{password}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Login admin: HTTP 200',()=>pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Revocar con evidencia",
+      "request": {
+        "method": "POST",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/certificates/{{certId}}/revoke",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "certificates",
+            "{{certId}}",
+            "revoke"
+          ]
+        },
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"operationId\": \"{{$guid}}\",\n  \"expectedVersion\": {{certVersion}},\n  \"reason\": \"Demostración posterior a impresión\",\n  \"evidenceRef\": \"REV-POSTMAN\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Revocar con evidencia: HTTP 200',()=>pm.response.to.have.status(200));",
+              "const body=pm.response.json();",
+              "pm.collectionVariables.set('certVersion',body.version);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mismo QR consulta Revoked",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/public/certificates/{{certId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "public",
+            "certificates",
+            "{{certId}}"
+          ]
+        },
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Mismo QR consulta Revoked: HTTP 200',()=>pm.response.to.have.status(200));",
+              "pm.test('Revocación actual',()=>pm.expect(pm.response.json().status).to.eql('Revoked'));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

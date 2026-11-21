@@ -1,0 +1,534 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "EventOre Identity",
+    "version": "1.3.0",
+    "description": "Ocho servicios con MySQL 8.4 independiente: Identity, Traceability, Logistics, Processing, Jewelry, Certification, Devices y Reporting. La cookie se obtiene mediante login. Los reportes de dispositivos usan Bearer propio. Los comandos conservan operationId y cuerpo ante fallos sin confirmación. Los ejemplos son datos de prueba, no credenciales."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "session": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "eventore_session"
+      },
+      "deviceBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "Payload": {
+        "type": "object",
+        "required": [
+          "mineralType",
+          "weight",
+          "weightUnit",
+          "originEvidence"
+        ],
+        "properties": {
+          "mineralType": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "string",
+            "example": "125.50",
+            "description": "Exact positive decimal string: at most 35 integer digits and 30 fractional digits; INVALID_WEIGHT_PRECISION if exceeded.",
+            "maxLength": 66
+          },
+          "weightUnit": {
+            "type": "string",
+            "enum": [
+              "g",
+              "kg",
+              "t"
+            ]
+          },
+          "originEvidence": {
+            "type": "object",
+            "required": [
+              "reference",
+              "source"
+            ],
+            "properties": {
+              "reference": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              }
+            }
+          },
+          "location": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "latitude": {
+                "type": "number",
+                "minimum": -90,
+                "maximum": 90
+              },
+              "longitude": {
+                "type": "number",
+                "minimum": -180,
+                "maximum": 180
+              }
+            }
+          },
+          "concessionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        }
+      },
+      "Event": {
+        "type": "object",
+        "required": [
+          "clientEventId",
+          "eventType",
+          "occurredAt",
+          "dependencies",
+          "payload"
+        ],
+        "properties": {
+          "clientEventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventType": {
+            "type": "string",
+            "enum": [
+              "LotRegistered"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp, years 1000-9999 in UTC, at most six fractional second digits."
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Empty for LotRegistered in Sprint 1"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/Payload"
+          }
+        }
+      },
+      "Outcome": {
+        "type": "object",
+        "properties": {
+          "clientEventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Accepted",
+              "AlreadyProcessed",
+              "Conflict",
+              "Rejected"
+            ]
+          },
+          "lotId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "summary": "Start 8-hour session",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Identity and HttpOnly session cookie"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "503": {
+            "description": "Service unavailable"
+          }
+        },
+        "tags": [
+          "Identity"
+        ]
+      }
+    },
+    "/auth/session": {
+      "get": {
+        "summary": "Authenticated identity",
+        "responses": {
+          "200": {
+            "description": "Identity: userId, tenantId, email"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "503": {
+            "description": "Service unavailable"
+          }
+        },
+        "tags": [
+          "Identity"
+        ]
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "Revoke current session",
+        "responses": {
+          "204": {
+            "description": "Session cleared"
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Session required"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "503": {
+            "description": "Service unavailable"
+          }
+        },
+        "tags": [
+          "Identity"
+        ]
+      }
+    },
+    "/auth/roles": {
+      "get": {
+        "summary": "Catálogo de roles y permisos",
+        "tags": [
+          "Identity"
+        ],
+        "x-permission": "users.manage",
+        "responses": {
+          "200": {
+            "description": "Operación confirmada",
+            "content": {
+              "application/json": {
+                "example": {
+                  "roles": {
+                    "Administrator": [
+                      "devices.manage",
+                      "devices.disable",
+                      "reporting.read",
+                      "reporting.export",
+                      "geofences.manage",
+                      "users.manage",
+                      "lots.read",
+                      "lots.register",
+                      "lots.cancel",
+                      "lots.release",
+                      "shipments.checkpoint",
+                      "shipments.report",
+                      "shipments.review",
+                      "shipments.receive",
+                      "shipments.weigh",
+                      "shipments.supervise",
+                      "processing.manage",
+                      "inventory.manage",
+                      "certificates.request",
+                      "certificates.read",
+                      "certificates.review",
+                      "certificates.revoke",
+                      "evidence.review"
+                    ],
+                    "Supervisor": [
+                      "devices.manage",
+                      "reporting.read",
+                      "reporting.export",
+                      "geofences.manage",
+                      "lots.read",
+                      "lots.register",
+                      "lots.cancel",
+                      "lots.release",
+                      "shipments.checkpoint",
+                      "shipments.review",
+                      "shipments.weigh",
+                      "shipments.supervise"
+                    ],
+                    "Operator": [
+                      "lots.read",
+                      "lots.register"
+                    ],
+                    "Transporter": [
+                      "lots.read",
+                      "custody.accept",
+                      "shipments.checkpoint",
+                      "shipments.report",
+                      "shipments.delegate"
+                    ],
+                    "Viewer": [
+                      "lots.read"
+                    ],
+                    "PlantOperator": [
+                      "reporting.read",
+                      "lots.read",
+                      "shipments.checkpoint",
+                      "shipments.weigh",
+                      "shipments.receive",
+                      "shipments.review",
+                      "processing.manage"
+                    ],
+                    "Jeweler": [
+                      "lots.read",
+                      "inventory.manage",
+                      "certificates.request",
+                      "certificates.read"
+                    ],
+                    "Certifier": [
+                      "lots.read",
+                      "evidence.review",
+                      "certificates.review",
+                      "certificates.read"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Sesión requerida"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "404": {
+            "description": "Recurso no visible en la organización"
+          },
+          "409": {
+            "description": "Versión/estado incompatible, último administrador o identificador reutilizado"
+          },
+          "503": {
+            "description": "Operación no confirmada; reintentar conservando operationId y el cuerpo original"
+          }
+        }
+      }
+    },
+    "/auth/users": {
+      "get": {
+        "summary": "Usuarios de la organización, sin credenciales",
+        "tags": [
+          "Identity"
+        ],
+        "x-permission": "users.manage",
+        "responses": {
+          "200": {
+            "description": "Operación confirmada",
+            "content": {
+              "application/json": {
+                "example": {
+                  "users": [
+                    {
+                      "id": "44444444-4444-4444-8444-444444444444",
+                      "email": "operator@example.test",
+                      "active": true,
+                      "roles": [
+                        "Operator"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Sesión requerida"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "404": {
+            "description": "Recurso no visible en la organización"
+          },
+          "409": {
+            "description": "Versión/estado incompatible, último administrador o identificador reutilizado"
+          },
+          "503": {
+            "description": "Operación no confirmada; reintentar conservando operationId y el cuerpo original"
+          }
+        }
+      }
+    },
+    "/auth/transporters": {
+      "get": {
+        "summary": "Transportistas activos de la organización",
+        "tags": [
+          "Identity"
+        ],
+        "x-permission": "lots.release",
+        "responses": {
+          "200": {
+            "description": "Operación confirmada",
+            "content": {
+              "application/json": {
+                "example": {
+                  "users": [
+                    {
+                      "id": "44444444-4444-4444-8444-444444444444",
+                      "email": "carrier@example.test"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Sesión requerida"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "404": {
+            "description": "Recurso no visible en la organización"
+          },
+          "409": {
+            "description": "Versión/estado incompatible, último administrador o identificador reutilizado"
+          },
+          "503": {
+            "description": "Operación no confirmada; reintentar conservando operationId y el cuerpo original"
+          }
+        }
+      }
+    },
+    "/auth/users/{userId}/roles": {
+      "put": {
+        "summary": "Asignar roles; efectivos en la siguiente petición",
+        "tags": [
+          "Identity"
+        ],
+        "x-permission": "users.manage",
+        "responses": {
+          "200": {
+            "description": "Operación confirmada",
+            "content": {
+              "application/json": {
+                "example": {
+                  "userId": "44444444-4444-4444-8444-444444444444",
+                  "roles": [
+                    "Supervisor"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida"
+          },
+          "401": {
+            "description": "Sesión requerida"
+          },
+          "403": {
+            "description": "Origen o permiso no autorizado"
+          },
+          "404": {
+            "description": "Recurso no visible en la organización"
+          },
+          "409": {
+            "description": "Versión/estado incompatible, último administrador o identificador reutilizado"
+          },
+          "503": {
+            "description": "Operación no confirmada; reintentar conservando operationId y el cuerpo original"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "example": {
+                "roles": [
+                  "Supervisor"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

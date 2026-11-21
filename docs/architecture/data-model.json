@@ -1,0 +1,1626 @@
+{
+  "identity": [
+    {
+      "table": "app_users",
+      "primaryKey": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "CHAR"
+        },
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "email",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "password_hash",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "active",
+          "type": "BOOLEAN"
+        },
+        {
+          "name": "failed_attempts",
+          "type": "INT"
+        },
+        {
+          "name": "locked_until",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/identity/003_sessions.sql"
+    },
+    {
+      "table": "app_sessions",
+      "primaryKey": "token_hash",
+      "columns": [
+        {
+          "name": "token_hash",
+          "type": "CHAR"
+        },
+        {
+          "name": "user_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "expires_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columns": "user_id",
+          "table": "app_users",
+          "target": "id"
+        }
+      ],
+      "source": "database/migrations/identity/003_sessions.sql"
+    },
+    {
+      "table": "app_user_roles",
+      "primaryKey": "user_id,role_name",
+      "columns": [
+        {
+          "name": "user_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "role_name",
+          "type": "VARCHAR"
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columns": "user_id",
+          "table": "app_users",
+          "target": "id"
+        }
+      ],
+      "source": "database/migrations/identity/004_roles.sql"
+    },
+    {
+      "table": "tenant_access_guards",
+      "primaryKey": "tenant_id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/identity/004_roles.sql"
+    },
+    {
+      "table": "access_audit",
+      "primaryKey": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "CHAR"
+        },
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "actor_id",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "target_user_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "previous_roles",
+          "type": "JSON"
+        },
+        {
+          "name": "assigned_roles",
+          "type": "JSON"
+        },
+        {
+          "name": "occurred_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/identity/004_roles.sql"
+    }
+  ],
+  "traceability": [
+    {
+      "table": "mineral_lots",
+      "primaryKey": "tenant_id,id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "CHAR"
+        },
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "mineral_type",
+          "type": "LONGTEXT"
+        },
+        {
+          "name": "weight",
+          "type": "DECIMAL"
+        },
+        {
+          "name": "weight_unit",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "version",
+          "type": "INT"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/lots/001_register_lots.sql"
+    },
+    {
+      "table": "origin_evidence",
+      "primaryKey": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "CHAR"
+        },
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "lot_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "reference",
+          "type": "LONGTEXT"
+        },
+        {
+          "name": "source",
+          "type": "LONGTEXT"
+        },
+        {
+          "name": "review_status",
+          "type": "VARCHAR"
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columns": "tenant_id,lot_id",
+          "table": "mineral_lots",
+          "target": "tenant_id,id"
+        }
+      ],
+      "source": "database/migrations/lots/001_register_lots.sql"
+    },
+    {
+      "table": "trace_events",
+      "primaryKey": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "CHAR"
+        },
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "lot_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "client_event_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "source_id",
+          "type": "LONGTEXT"
+        },
+        {
+          "name": "event_type",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "occurred_at",
+          "type": "DATETIME"
+        },
+        {
+          "name": "payload",
+          "type": "JSON"
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columns": "tenant_id,lot_id",
+          "table": "mineral_lots",
+          "target": "tenant_id,id"
+        }
+      ],
+      "source": "database/migrations/lots/001_register_lots.sql"
+    },
+    {
+      "table": "lot_handovers",
+      "primaryKey": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "CHAR"
+        },
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "lot_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "recipient_user_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "prepared_by",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "state",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "expires_at",
+          "type": "DATETIME"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columns": "tenant_id,lot_id",
+          "table": "mineral_lots",
+          "target": "tenant_id,id"
+        }
+      ],
+      "source": "database/migrations/lots/005_lifecycle.sql"
+    },
+    {
+      "table": "lot_restrictions",
+      "primaryKey": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "CHAR"
+        },
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "lot_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "reason",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "active",
+          "type": "BOOLEAN"
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columns": "tenant_id,lot_id",
+          "table": "mineral_lots",
+          "target": "tenant_id,id"
+        }
+      ],
+      "source": "database/migrations/lots/005_lifecycle.sql"
+    },
+    {
+      "table": "lot_lifecycle_events",
+      "primaryKey": "tenant_id,operation_id",
+      "columns": [
+        {
+          "name": "operation_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "lot_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "actor_id",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "action",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "command",
+          "type": "JSON"
+        },
+        {
+          "name": "result",
+          "type": "JSON"
+        },
+        {
+          "name": "occurred_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columns": "tenant_id,lot_id",
+          "table": "mineral_lots",
+          "target": "tenant_id,id"
+        }
+      ],
+      "source": "database/migrations/lots/005_lifecycle.sql"
+    },
+    {
+      "table": "lot_delegations",
+      "primaryKey": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "CHAR"
+        },
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "lot_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "sender_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "recipient_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "state",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "expires_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columns": "tenant_id,lot_id",
+          "table": "mineral_lots",
+          "target": "tenant_id,id"
+        }
+      ],
+      "source": "database/migrations/lots/007_delegations.sql"
+    },
+    {
+      "table": "lot_processing_facts",
+      "primaryKey": "tenant_id,lot_id,operation_id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "lot_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "operation_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "action",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "payload",
+          "type": "JSON"
+        },
+        {
+          "name": "occurred_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columns": "tenant_id,lot_id",
+          "table": "mineral_lots",
+          "target": "tenant_id,id"
+        }
+      ],
+      "source": "database/migrations/lots/009_processing.sql"
+    },
+    {
+      "table": "lot_lineage",
+      "primaryKey": "tenant_id,parent_lot_id,child_lot_id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "parent_lot_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "child_lot_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "operation_id",
+          "type": "CHAR"
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columns": "tenant_id,parent_lot_id",
+          "table": "mineral_lots",
+          "target": "tenant_id,id"
+        },
+        {
+          "columns": "tenant_id,child_lot_id",
+          "table": "mineral_lots",
+          "target": "tenant_id,id"
+        }
+      ],
+      "source": "database/migrations/lots/009_processing.sql"
+    },
+    {
+      "table": "geofence_operations",
+      "primaryKey": "tenant_id,operation_id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "operation_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "command",
+          "type": "JSON"
+        },
+        {
+          "name": "result",
+          "type": "JSON"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/lots/010_geofences.sql"
+    },
+    {
+      "table": "authorized_concessions",
+      "primaryKey": "tenant_id,id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "id",
+          "type": "CHAR"
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "polygon",
+          "type": "JSON"
+        },
+        {
+          "name": "source",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "authorization_ref",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "approved_by",
+          "type": "CHAR"
+        },
+        {
+          "name": "approved_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/lots/010_geofences.sql"
+    },
+    {
+      "table": "lot_location_checks",
+      "primaryKey": "tenant_id,lot_id,operation_id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "lot_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "operation_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "result",
+          "type": "JSON"
+        },
+        {
+          "name": "occurred_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/lots/010_geofences.sql"
+    },
+    {
+      "table": "lot_capture_locations",
+      "primaryKey": "tenant_id,lot_id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "lot_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "declaration",
+          "type": "JSON"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/lots/010_geofences.sql"
+    },
+    {
+      "table": "event_inbox",
+      "primaryKey": "tenant_id,client_event_id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "client_event_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "envelope",
+          "type": "JSON"
+        },
+        {
+          "name": "outcome",
+          "type": "JSON"
+        },
+        {
+          "name": "received_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/messaging/002_inbox_outbox.sql"
+    },
+    {
+      "table": "event_outbox",
+      "primaryKey": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "CHAR"
+        },
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "client_event_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "lot_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "payload",
+          "type": "JSON"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME"
+        },
+        {
+          "name": "published_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [
+        {
+          "columns": "tenant_id,client_event_id",
+          "table": "event_inbox",
+          "target": "tenant_id,client_event_id"
+        },
+        {
+          "columns": "tenant_id,lot_id",
+          "table": "mineral_lots",
+          "target": "tenant_id,id"
+        }
+      ],
+      "source": "database/migrations/messaging/002_inbox_outbox.sql"
+    }
+  ],
+  "logistics": [
+    {
+      "table": "custody_operations",
+      "primaryKey": "tenant_id,operation_id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "operation_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "lot_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "actor_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "state",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "command",
+          "type": "JSON"
+        },
+        {
+          "name": "result",
+          "type": "JSON"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/logistics/001_custody.sql"
+    },
+    {
+      "table": "logistics_operations",
+      "primaryKey": "tenant_id,operation_id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "operation_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "actor_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "action",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "state",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "command",
+          "type": "JSON"
+        },
+        {
+          "name": "result",
+          "type": "JSON"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/logistics/002_shipments.sql"
+    },
+    {
+      "table": "shipment_events",
+      "primaryKey": "tenant_id,operation_id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "operation_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "lot_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "action",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "actor_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "result",
+          "type": "JSON"
+        },
+        {
+          "name": "occurred_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/logistics/002_shipments.sql"
+    },
+    {
+      "table": "shipment_evidence",
+      "primaryKey": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "CHAR"
+        },
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "lot_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "actor_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "incident_operation_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "mime_type",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "byte_length",
+          "type": "INT"
+        },
+        {
+          "name": "sha256",
+          "type": "CHAR"
+        },
+        {
+          "name": "content",
+          "type": "LONGBLOB"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/logistics/002_shipments.sql"
+    }
+  ],
+  "processing": [
+    {
+      "table": "processing_operations",
+      "primaryKey": "tenant_id,operation_id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "operation_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "actor_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "action",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "state",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "command",
+          "type": "JSON"
+        },
+        {
+          "name": "result",
+          "type": "JSON"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/processing/001_processing.sql"
+    },
+    {
+      "table": "processing_lots",
+      "primaryKey": "tenant_id,lot_id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "lot_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "source_version",
+          "type": "INT"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "snapshot",
+          "type": "JSON"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/processing/001_processing.sql"
+    },
+    {
+      "table": "processing_events",
+      "primaryKey": "tenant_id,operation_id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "operation_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "lot_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "actor_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "action",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "result",
+          "type": "JSON"
+        },
+        {
+          "name": "occurred_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/processing/001_processing.sql"
+    }
+  ],
+  "jewelry": [
+    {
+      "table": "jewelry_operations",
+      "primaryKey": "tenant_id,operation_id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "operation_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "actor_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "action",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "state",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "command",
+          "type": "JSON"
+        },
+        {
+          "name": "result",
+          "type": "JSON"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/jewelry/001_inventory.sql"
+    },
+    {
+      "table": "inventory_materials",
+      "primaryKey": "tenant_id,id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "id",
+          "type": "CHAR"
+        },
+        {
+          "name": "lot_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "mineral_type",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "category",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "source",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "quantity_grams",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "available_grams",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "source_version",
+          "type": "INT"
+        },
+        {
+          "name": "version",
+          "type": "INT"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/jewelry/001_inventory.sql"
+    },
+    {
+      "table": "jewelry_products",
+      "primaryKey": "tenant_id,id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "id",
+          "type": "CHAR"
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "version",
+          "type": "INT"
+        },
+        {
+          "name": "composition",
+          "type": "JSON"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/jewelry/001_inventory.sql"
+    },
+    {
+      "table": "composition_history",
+      "primaryKey": "tenant_id,product_id,version",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "product_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "version",
+          "type": "INT"
+        },
+        {
+          "name": "operation_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "actor_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "reason",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "before_composition",
+          "type": "JSON"
+        },
+        {
+          "name": "after_composition",
+          "type": "JSON"
+        },
+        {
+          "name": "occurred_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/jewelry/001_inventory.sql"
+    }
+  ],
+  "certification": [
+    {
+      "table": "certificates",
+      "primaryKey": "tenant_id,id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "id",
+          "type": "CHAR"
+        },
+        {
+          "name": "product_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "product_version",
+          "type": "INT"
+        },
+        {
+          "name": "version",
+          "type": "INT"
+        },
+        {
+          "name": "status",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "requested_by",
+          "type": "CHAR"
+        },
+        {
+          "name": "issuer_name",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "reviewed_by",
+          "type": "CHAR"
+        },
+        {
+          "name": "evidence_hash",
+          "type": "CHAR"
+        },
+        {
+          "name": "published_summary",
+          "type": "JSON"
+        },
+        {
+          "name": "issued_at",
+          "type": "DATETIME"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/certification/001_certificates.sql"
+    },
+    {
+      "table": "certificate_operations",
+      "primaryKey": "tenant_id,operation_id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "operation_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "certificate_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "actor_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "action",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "command",
+          "type": "JSON"
+        },
+        {
+          "name": "result",
+          "type": "JSON"
+        },
+        {
+          "name": "occurred_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/certification/001_certificates.sql"
+    },
+    {
+      "table": "certificate_pdf_jobs",
+      "primaryKey": "tenant_id,certificate_id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "certificate_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "state",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "content",
+          "type": "LONGBLOB"
+        },
+        {
+          "name": "updated_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/certification/001_certificates.sql"
+    }
+  ],
+  "devices": [
+    {
+      "table": "device_operations",
+      "primaryKey": "tenant_id,operation_id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "operation_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "command",
+          "type": "JSON"
+        },
+        {
+          "name": "result",
+          "type": "JSON"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/devices/001_devices.sql"
+    },
+    {
+      "table": "devices",
+      "primaryKey": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "CHAR"
+        },
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "serial",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "name",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "operation_lot_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "version",
+          "type": "INT"
+        },
+        {
+          "name": "active",
+          "type": "BOOLEAN"
+        },
+        {
+          "name": "disabled_reason",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "credential_hash",
+          "type": "CHAR"
+        },
+        {
+          "name": "last_communication",
+          "type": "DATETIME"
+        },
+        {
+          "name": "battery",
+          "type": "INT"
+        },
+        {
+          "name": "battery_reported_at",
+          "type": "DATETIME"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/devices/001_devices.sql"
+    },
+    {
+      "table": "device_calibrations",
+      "primaryKey": "id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "id",
+          "type": "CHAR"
+        },
+        {
+          "name": "device_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "calibrated_at",
+          "type": "DATETIME"
+        },
+        {
+          "name": "expires_at",
+          "type": "DATETIME"
+        },
+        {
+          "name": "evidence_ref",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "actor_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/devices/001_devices.sql"
+    },
+    {
+      "table": "device_readings",
+      "primaryKey": "tenant_id,device_id,event_id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "device_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "event_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "payload",
+          "type": "JSON"
+        },
+        {
+          "name": "result",
+          "type": "JSON"
+        },
+        {
+          "name": "received_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/devices/001_devices.sql"
+    },
+    {
+      "table": "device_alerts",
+      "primaryKey": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "CHAR"
+        },
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "device_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "kind",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "details",
+          "type": "JSON"
+        },
+        {
+          "name": "opened_at",
+          "type": "DATETIME"
+        },
+        {
+          "name": "resolved_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/devices/001_devices.sql"
+    },
+    {
+      "table": "device_audit",
+      "primaryKey": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "CHAR"
+        },
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "device_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "actor_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "action",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "payload",
+          "type": "JSON"
+        },
+        {
+          "name": "occurred_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/devices/001_devices.sql"
+    }
+  ],
+  "reporting": [
+    {
+      "table": "reporting_operations",
+      "primaryKey": "tenant_id,operation_id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "operation_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "command",
+          "type": "JSON"
+        },
+        {
+          "name": "result",
+          "type": "JSON"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/reporting/001_reporting.sql"
+    },
+    {
+      "table": "reporting_snapshots",
+      "primaryKey": "id",
+      "columns": [
+        {
+          "name": "id",
+          "type": "CHAR"
+        },
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "kind",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "parameters",
+          "type": "JSON"
+        },
+        {
+          "name": "result",
+          "type": "JSON"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/reporting/001_reporting.sql"
+    },
+    {
+      "table": "evidence_exports",
+      "primaryKey": "tenant_id,id",
+      "columns": [
+        {
+          "name": "tenant_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "id",
+          "type": "CHAR"
+        },
+        {
+          "name": "actor_id",
+          "type": "CHAR"
+        },
+        {
+          "name": "parameters",
+          "type": "JSON"
+        },
+        {
+          "name": "state",
+          "type": "VARCHAR"
+        },
+        {
+          "name": "content",
+          "type": "LONGBLOB"
+        },
+        {
+          "name": "source_captured_at",
+          "type": "DATETIME"
+        },
+        {
+          "name": "created_at",
+          "type": "DATETIME"
+        },
+        {
+          "name": "completed_at",
+          "type": "DATETIME"
+        }
+      ],
+      "foreignKeys": [],
+      "source": "database/migrations/reporting/001_reporting.sql"
+    }
+  ]
+}
