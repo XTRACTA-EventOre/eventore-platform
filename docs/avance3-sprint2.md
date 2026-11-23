@@ -1,5 +1,8 @@
 # Texto verificable para Avance 3: Sprint 2 y Capítulo V
 
+Registro de una etapa previa. El alcance y las pruebas actuales se describen en la [guía de Avance 4](https://github.com/XTRACTA-EventOre/eventore-platform/blob/feature/sprint2-access-custody/docs/avance4/testing-guide.md); las limitaciones históricas de este documento no sustituyen ese estado vigente.
+
+
 Fuentes de planificación: [informe del equipo](https://docs.google.com/document/d/1qcsjouwkJjoxrh5jeC3HM2XAG_x1pxj-/edit), [guía y cronograma de entregables](https://docs.google.com/document/d/1QcjnmvQKywFScJD7_KZoCEX7KgB1_Aqm/edit) y [rúbrica](https://docs.google.com/spreadsheets/d/1OPFaIELK4sMlnQCOL8UV_ZVXMvff-mH1/edit). Fecha de corte: 12 de noviembre de 2026 (hora de Lima). Este texto refleja únicamente el estado observado en el repositorio y en las pruebas.
 
 ## Cambio de base de datos posterior

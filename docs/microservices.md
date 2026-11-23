@@ -1,39 +1,33 @@
-# Separación desplegable de EventOre
+# Arquitectura ejecutable de EventOre
 
-## Alcance implementado
+La SPA Vue/Vite reside en [eventore](https://github.com/XTRACTA-EventOre/eventore); APIs, infraestructura y pruebas backend en eventore-platform. El incremento usa nueve procesos Node/Express (gateway más ocho servicios) y ocho MySQL 8.4, cada uno con usuario, migración y volumen propios. No hay joins SQL entre bases de servicios. Compose publica únicamente el gateway en loopback; la variante cloud agrega el servidor web.
 
-El incremento de Sprint 1 se ejecuta en tres procesos: `identity` (cuentas y sesiones), `traceability` (lotes, evidencias, eventos, inbox y outbox) y `gateway` (rutas públicas API). Compose construye las imágenes y ejecuta dos instancias MySQL 8.4 con volúmenes y credenciales diferentes. Solo el gateway publica un puerto. Cada servicio tiene su propio comando de arranque y puede reiniciarse por separado. El backend reside en eventore-platform y el frontend en [eventore](https://github.com/XTRACTA-EventOre/eventore). Cada contenedor es una unidad de despliegue.
-
-| Contexto DDD | Datos que escribe | Contrato |
+| Servicio | Propiedad de datos | Integración |
 | --- | --- | --- |
-| Identity | `app_users`, `app_sessions` | `/api/v1/auth/*`; `/internal/session` solo para trazabilidad |
-| Extraction & Traceability | `mineral_lots`, `origin_evidence`, `trace_events`, `event_inbox`, `event_outbox` | `/api/v1/lots/*`, `/api/v1/events/*` |
-| Gateway | Ninguno | Conserva las rutas API públicas; no sirve archivos Vue |
+| Identity | Usuarios, hash de contraseña, sesiones, roles y auditoría de permisos | Cookie opaca HttpOnly; consulta remota de sesión y permisos vigentes por operación |
+| Traceability | Lote y versión autoritativos, origen, restricciones, entregas, genealogía, hechos de transformación y geocerca; Inbox/Outbox | Comandos internos autorizados por actor; lecturas de evidencia para Certification/Reporting |
+| Logistics | Ledger de custodia y comandos de viaje, eventos confirmados y fotografías privadas | HTTP a Traceability; la transición de lote y restricciones se consolida en su propietario |
+| Processing | Ledger, proyección local de lotes y eventos de planta | HTTP al propietario del agregado para dividir/fusionar con balance y parentesco atómicos |
+| Jewelry | Inventario, stock exacto, productos, composiciones e historial de correcciones | Recibo idempotente desde Traceability; stock/composición en transacción local |
+| Certification | Solicitudes, decisiones, versión/hash de evidencia, auditoría, trabajos PDF | Consulta por HTTP Jewelry y toda la genealogía de Traceability; estado público falla de forma segura |
+| Devices | Registro/vinculación, hash de credencial propia, calibraciones, lecturas y alertas/historial | Valida lote por HTTP. Reportes Bearer por dispositivo; evaluador periódico de disponibilidad |
+| Reporting | Snapshots de reportes y trabajos/exportaciones autorizadas | Contrato de lectura consistente de Traceability; no lee su base directamente |
+| Gateway | Sin almacenamiento de negocio | Rutas, proxy de archivos/cookies y CORS de origen explícito |
 
-Trazabilidad no consulta tablas de Identity. En cada petición protegida consulta `/internal/session` con la cookie y un secreto de servicio; si Identity no responde, devuelve 503. El tenant se obtiene de la respuesta de Identity. El secreto no se envía al navegador. Esta integración HTTP síncrona es una dependencia de disponibilidad conocida; su sustitución por validación local de tokens o una caché con revocación requiere diseño y pruebas adicionales.
+## Decisiones y límites de la extracción
 
-## Arranque local con Compose
+Se aplica una extracción gradual con APIs por contexto y propiedad separada de datos. El agregado de trazabilidad y su versión continúan centralizados en Traceability para conservar balance, consumo único y genealogía bajo una transacción MySQL. Processing y Logistics poseen ledgers/proyecciones independientes y coordinan por HTTP. Esta decisión reduce el riesgo de doble consumo, a cambio de acoplamiento de disponibilidad al propietario; no se afirma una autonomía completa de sus modelos de dominio.
 
-1. Copiar `.env.compose.example` a `.env` y sustituir los tres valores de ejemplo por secretos propios. Las contraseñas de BD deben ser aptas para URL.
-2. Ejecutar `docker compose up -d --build` desde la raíz. Los jobs `identity-migrate` y `traceability-migrate` aplican migraciones solo en sus respectivas bases.
-3. Crear un usuario en el contenedor Identity: `docker compose exec -e BOOTSTRAP_PASSWORD=<contraseña-de-12-o-más-caracteres> identity node scripts/create-user.js correo@ejemplo.com <tenant-uuid>`. No usar una contraseña de demo en un entorno compartido.
-4. Arrancar el frontend por separado con `npm run dev` en eventore y abrir `http://localhost:5173`. La API está en `http://localhost:3000/api/v1/health`. Revisar `docker compose ps` y `docker compose logs` ante fallos.
+Los ledgers conservan comandos e identificadores ante respuesta perdida. El efecto del lote se consolida una vez en Traceability; confirmar la proyección local puede ocurrir después. Lecturas y reintentos reconcilian resultados confirmados. No existe una transacción distribuida ni un broker implementado. Outbox conserva los registros de captura, pero no hay un publicador general RabbitMQ. Su publicación/consumo futuro debe añadir pruebas de entrega y recuperación.
 
-El QR usa `APP_BASE_URL`; para escanearlo desde otro dispositivo se necesita una URL accesible. En producción, el origen público debe usar HTTPS y el contenedor Identity debe recibir `NODE_ENV=production` para marcar la cookie `Secure`. La terminación TLS, gestión de secretos, copias de seguridad, observabilidad y políticas de red de producción siguen pendientes.
+Cada operación protegida consulta Identity para permisos actuales; una indisponibilidad devuelve error y no autoriza por defecto. Los contratos internos requieren un secreto de servicio y los comandos requieren además sesión del actor. Las lecturas internas de Certification/Reporting aceptan un tenant declarado solo por servidor autenticado. El gateway descarta cabeceras internas enviadas por clientes. La red de Docker no publica servicios internos. El secreto compartido es una limitación: producción debe evolucionar a identidades por servicio, permisos mínimos y canales autenticados.
 
-## Datos existentes y cambio de motor
+La consulta pública es una lista blanca. Una emisión Issued se vuelve a contrastar con composición y evidencia actuales; cambios exigen ReviewRequired y falta de confirmación produce UnableToVerify. Revoked siempre prevalece. QR y PDF no prueban autenticidad física ni cumplimiento legal/ESG.
 
-La configuración vigente usa MySQL 8.4. La instalación crea bases vacías separadas;
-el [procedimiento MySQL](mysql.md) documenta volúmenes nuevos, migraciones, precisión,
-pruebas y los pasos pendientes si hay datos anteriores en PostgreSQL. No se automatiza
-ni se presenta como ejecutado el traslado de esos datos.
+## Documentación y ejecución
 
-## Verificación
+[Guía de arranque/pruebas](avance4/testing-guide.md), [66 contratos OpenAPI](openapi.json), [alcance de 169/226 SP](avance4/scope.md), [criterios](avance4/acceptance-matrix.md), [tablero real de revisión](avance4/kanban.md) y [preparación AWS](../infra/cloud/AWS.md).
 
-`tests/microservices.test.js` comprueba rutas de gateway, conservación de cookie y QR binario, consulta de sesión remota y rechazo por falta de secreto. `.github/workflows/microservices.yml` arranca Compose y recorre inicio de sesión, registro, consulta, QR y revocación por el puerto público. Ejecutar además `npm test` en cada repositorio por separado. Las suites de MySQL 8.4 del Sprint 1 requieren `TEST_DATABASE_URL`; si no existe, Jest las omite.
+Las figuras y fuentes se encuentran en [architecture](architecture/). Los diagramas cloud describen una configuración propuesta verificable, no un despliegue público existente. GitHub Actions sí construye y ejecuta los procesos y MySQL mediante Compose. El acceso a cuenta AWS y la aprobación de recursos facturables quedan fuera de esa ejecución.
 
-## Límites actuales
-
-Las capacidades de Logistics, Custody, Checkpoints, Incidents y Roles de Sprint 2 no están implementadas por esta separación. El gateway y los servicios tienen contratos REST para el alcance existente de Sprint 1; no se afirma cobertura del 75 % del producto completo. El outbox de Traceability persiste eventos, pero todavía no hay publicación ni consumidores de otros contextos.
-
-Consulta el [README](../README.md) para arranque sin Compose y la [separación de repositorios](repository-split.md) para historial, API/CORS y orden de integración.
+Para bases PostgreSQL anteriores, no se afirma una conversión de datos ejecutada: conservar backups y seguir [mysql.md](mysql.md). Las migraciones MySQL existentes conservan sus checksums y se agregan migraciones nuevas. El historial y las ramas originales se conservan según [repository-split.md](repository-split.md).

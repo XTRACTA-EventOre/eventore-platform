@@ -35,7 +35,7 @@ describe('separate service boundaries', () => {
       fetchImpl: async (_url, options) => {
         expect(options.headers['x-internal-secret']).toBe('test-secret');
         expect(options.headers.cookie).toBe('eventore_session=test');
-        return new Response(status === 200 ? JSON.stringify({ identity: { tenantId: 'tenant-1', userId: 'user-1' } }) : '{}', { status });
+        return new Response(status === 200 ? JSON.stringify({ identity: { tenantId: 'tenant-1', userId: 'user-1', permissions: ['lots.read'] } }) : '{}', { status });
       } });
     const app = express();
     app.get('/protected', authenticate, (req, res) => res.json(req.identity));

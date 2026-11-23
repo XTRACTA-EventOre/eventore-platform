@@ -1,0 +1,1323 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "EventOre Jewelry",
+    "version": "1.3.0",
+    "description": "Ocho servicios con MySQL 8.4 independiente: Identity, Traceability, Logistics, Processing, Jewelry, Certification, Devices y Reporting. La cookie se obtiene mediante login. Los reportes de dispositivos usan Bearer propio. Los comandos conservan operationId y cuerpo ante fallos sin confirmación. Los ejemplos son datos de prueba, no credenciales."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "session": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "eventore_session"
+      },
+      "deviceBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "Payload": {
+        "type": "object",
+        "required": [
+          "mineralType",
+          "weight",
+          "weightUnit",
+          "originEvidence"
+        ],
+        "properties": {
+          "mineralType": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "string",
+            "example": "125.50",
+            "description": "Exact positive decimal string: at most 35 integer digits and 30 fractional digits; INVALID_WEIGHT_PRECISION if exceeded.",
+            "maxLength": 66
+          },
+          "weightUnit": {
+            "type": "string",
+            "enum": [
+              "g",
+              "kg",
+              "t"
+            ]
+          },
+          "originEvidence": {
+            "type": "object",
+            "required": [
+              "reference",
+              "source"
+            ],
+            "properties": {
+              "reference": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              }
+            }
+          },
+          "location": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "latitude": {
+                "type": "number",
+                "minimum": -90,
+                "maximum": 90
+              },
+              "longitude": {
+                "type": "number",
+                "minimum": -180,
+                "maximum": 180
+              }
+            }
+          },
+          "concessionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        }
+      },
+      "Event": {
+        "type": "object",
+        "required": [
+          "clientEventId",
+          "eventType",
+          "occurredAt",
+          "dependencies",
+          "payload"
+        ],
+        "properties": {
+          "clientEventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventType": {
+            "type": "string",
+            "enum": [
+              "LotRegistered"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp, years 1000-9999 in UTC, at most six fractional second digits."
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Empty for LotRegistered in Sprint 1"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/Payload"
+          }
+        }
+      },
+      "Outcome": {
+        "type": "object",
+        "properties": {
+          "clientEventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Accepted",
+              "AlreadyProcessed",
+              "Conflict",
+              "Rejected"
+            ]
+          },
+          "lotId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/jewelry/inventory": {
+      "get": {
+        "summary": "Inventario separado por procedencia y revisión",
+        "tags": [
+          "Jewelry"
+        ],
+        "description": "Inventario separado por procedencia y revisión",
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "materials": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "lotId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "mineralType": {
+                            "type": "string"
+                          },
+                          "category": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "string"
+                          },
+                          "quantityGrams": {
+                            "type": "string"
+                          },
+                          "availableGrams": {
+                            "type": "string"
+                          },
+                          "version": {
+                            "type": "integer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "materials": [
+                    {
+                      "id": "33333333-3333-4333-8333-333333333333",
+                      "lotId": "22222222-2222-4222-8222-222222222222",
+                      "mineralType": "Gold",
+                      "category": "Declared",
+                      "source": "Lote recibido; revisar genealogía vigente",
+                      "quantityGrams": "100000",
+                      "availableGrams": "99000",
+                      "version": 1
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Datos inválidos"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación requerida",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Autenticación requerida"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso u origen no autorizado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Permiso u origen no autorizado"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible para la organización",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Recurso no visible para la organización"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado, versión, evidencia o balance incompatible",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Estado, versión, evidencia o balance incompatible"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio u operación sin confirmar; conservar identificador original",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio u operación sin confirmar; conservar identificador original"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_jewelry_inventory",
+        "x-permission": "inventory.manage"
+      }
+    },
+    "/jewelry/lots/{lotId}/receipt": {
+      "post": {
+        "summary": "Recibir lote Processed identificado por QR",
+        "tags": [
+          "Jewelry"
+        ],
+        "description": "Recibir lote Processed identificado por QR",
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "materialId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "lotId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "action": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer"
+                    },
+                    "originEvidenceStatus": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "example": {
+                  "materialId": "33333333-3333-4333-8333-333333333333",
+                  "lotId": "22222222-2222-4222-8222-222222222222",
+                  "action": "JewelryReceived",
+                  "status": "AtJewelry",
+                  "version": 4,
+                  "originEvidenceStatus": "PendingReview"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Datos inválidos"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación requerida",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Autenticación requerida"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso u origen no autorizado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Permiso u origen no autorizado"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible para la organización",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Recurso no visible para la organización"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado, versión, evidencia o balance incompatible",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Estado, versión, evidencia o balance incompatible"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio u operación sin confirmar; conservar identificador original",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio u operación sin confirmar; conservar identificador original"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_jewelry_lots_lotId_receipt",
+        "x-permission": "inventory.manage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operationId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expectedVersion": {
+                    "type": "integer"
+                  },
+                  "qrLotId": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "qrLotId"
+                ]
+              },
+              "example": {
+                "operationId": "33333333-3333-4333-8333-333333333333",
+                "expectedVersion": 3,
+                "qrLotId": "22222222-2222-4222-8222-222222222222"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/jewelry/external-materials": {
+      "post": {
+        "summary": "Declarar cantidad y fuente de material externo",
+        "tags": [
+          "Jewelry"
+        ],
+        "description": "La categoría External la decide el servidor. Un campo category enviado por el cliente no convierte material sin evidencia en verificado.",
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "materialId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "category": {
+                      "type": "string"
+                    },
+                    "quantityGrams": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "example": {
+                  "materialId": "33333333-3333-4333-8333-333333333333",
+                  "category": "External",
+                  "quantityGrams": "100",
+                  "version": 1
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Datos inválidos"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación requerida",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Autenticación requerida"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso u origen no autorizado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Permiso u origen no autorizado"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible para la organización",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Recurso no visible para la organización"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado, versión, evidencia o balance incompatible",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Estado, versión, evidencia o balance incompatible"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio u operación sin confirmar; conservar identificador original",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio u operación sin confirmar; conservar identificador original"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_jewelry_external_materials",
+        "x-permission": "inventory.manage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operationId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "mineralType": {
+                    "type": "string"
+                  },
+                  "weight": {
+                    "type": "string"
+                  },
+                  "weightUnit": {
+                    "type": "string"
+                  },
+                  "source": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "operationId",
+                  "mineralType",
+                  "weight",
+                  "weightUnit",
+                  "source"
+                ]
+              },
+              "example": {
+                "operationId": "33333333-3333-4333-8333-333333333333",
+                "mineralType": "Gold",
+                "weight": "100",
+                "weightUnit": "g",
+                "source": "Declaración del proveedor"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jewelry/products": {
+      "get": {
+        "summary": "Listar joyas de la organización",
+        "tags": [
+          "Jewelry"
+        ],
+        "description": "Listar joyas de la organización",
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "products": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "version": {
+                            "type": "integer"
+                          },
+                          "updatedAt": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "products": [
+                    {
+                      "id": "22222222-2222-4222-8222-222222222222",
+                      "name": "Anillo",
+                      "version": 1,
+                      "updatedAt": "2026-11-14T18:00:00Z"
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Datos inválidos"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación requerida",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Autenticación requerida"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso u origen no autorizado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Permiso u origen no autorizado"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible para la organización",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Recurso no visible para la organización"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado, versión, evidencia o balance incompatible",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Estado, versión, evidencia o balance incompatible"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio u operación sin confirmar; conservar identificador original",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio u operación sin confirmar; conservar identificador original"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_jewelry_products",
+        "x-permission": "inventory.manage"
+      },
+      "post": {
+        "summary": "Crear joya y reservar existencias atómicamente",
+        "tags": [
+          "Jewelry"
+        ],
+        "description": "Crear joya y reservar existencias atómicamente",
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "productId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "version": {
+                      "type": "integer"
+                    },
+                    "reviewRequired": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "example": {
+                  "productId": "55555555-5555-4555-8555-555555555555",
+                  "version": 1,
+                  "reviewRequired": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Datos inválidos"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación requerida",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Autenticación requerida"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso u origen no autorizado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Permiso u origen no autorizado"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible para la organización",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Recurso no visible para la organización"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado, versión, evidencia o balance incompatible",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Estado, versión, evidencia o balance incompatible"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio u operación sin confirmar; conservar identificador original",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio u operación sin confirmar; conservar identificador original"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_jewelry_products",
+        "x-permission": "inventory.manage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operationId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "allocations": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "materialId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "weight": {
+                          "type": "string"
+                        },
+                        "weightUnit": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "operationId",
+                  "name",
+                  "reason",
+                  "allocations"
+                ]
+              },
+              "example": {
+                "operationId": "55555555-5555-4555-8555-555555555555",
+                "name": "Anillo",
+                "reason": "Fabricación documentada",
+                "allocations": [
+                  {
+                    "materialId": "33333333-3333-4333-8333-333333333333",
+                    "weight": "10",
+                    "weightUnit": "g"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jewelry/products/{id}": {
+      "get": {
+        "summary": "Consultar composición y correcciones",
+        "tags": [
+          "Jewelry"
+        ],
+        "description": "Consultar composición y correcciones",
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer"
+                    },
+                    "composition": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "materialId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "lotId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "quantityGrams": {
+                            "type": "string"
+                          },
+                          "category": {
+                            "type": "string"
+                          },
+                          "mineralType": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    },
+                    "history": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "id": "55555555-5555-4555-8555-555555555555",
+                  "name": "Anillo",
+                  "version": 1,
+                  "composition": [
+                    {
+                      "materialId": "33333333-3333-4333-8333-333333333333",
+                      "lotId": "22222222-2222-4222-8222-222222222222",
+                      "quantityGrams": "10",
+                      "category": "Declared",
+                      "mineralType": "Gold"
+                    }
+                  ],
+                  "history": []
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Datos inválidos"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación requerida",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Autenticación requerida"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso u origen no autorizado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Permiso u origen no autorizado"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible para la organización",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Recurso no visible para la organización"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado, versión, evidencia o balance incompatible",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Estado, versión, evidencia o balance incompatible"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio u operación sin confirmar; conservar identificador original",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio u operación sin confirmar; conservar identificador original"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_jewelry_products_id",
+        "x-permission": "inventory.manage",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/jewelry/products/{id}/composition": {
+      "put": {
+        "summary": "Corregir composición conservando antes, después y motivo",
+        "tags": [
+          "Jewelry"
+        ],
+        "description": "Transacción con bloqueos ordenados de stock. No permite sobreasignación ni mezcla de material externo con documentado/declarado. Los certificados de versiones anteriores pasan a ReviewRequired al consultar su vigencia.",
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "productId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "version": {
+                      "type": "integer"
+                    },
+                    "reviewRequired": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "example": {
+                  "productId": "55555555-5555-4555-8555-555555555555",
+                  "version": 4,
+                  "reviewRequired": true
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Datos inválidos"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación requerida",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Autenticación requerida"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso u origen no autorizado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Permiso u origen no autorizado"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible para la organización",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Recurso no visible para la organización"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado, versión, evidencia o balance incompatible",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Estado, versión, evidencia o balance incompatible"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio u operación sin confirmar; conservar identificador original",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio u operación sin confirmar; conservar identificador original"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "put_jewelry_products_id_composition",
+        "x-permission": "inventory.manage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operationId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expectedVersion": {
+                    "type": "integer"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "allocations": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "materialId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "weight": {
+                          "type": "string"
+                        },
+                        "weightUnit": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "name",
+                  "reason",
+                  "allocations"
+                ]
+              },
+              "example": {
+                "operationId": "33333333-3333-4333-8333-333333333333",
+                "expectedVersion": 3,
+                "name": "Anillo",
+                "reason": "Fabricación documentada",
+                "allocations": [
+                  {
+                    "materialId": "33333333-3333-4333-8333-333333333333",
+                    "weight": "10",
+                    "weightUnit": "g"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
