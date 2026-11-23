@@ -1,0 +1,355 @@
+{
+  "totalStoryPoints": 226,
+  "implementedStoryPoints": 169,
+  "implementedPercent": 74.78,
+  "criteriaCount": 109,
+  "stories": [
+    {
+      "id": "US12",
+      "title": "Registro inicial de lote",
+      "points": 3,
+      "service": "Traceability + frontend",
+      "status": "Integrated baseline"
+    },
+    {
+      "id": "US14",
+      "title": "Modo Offline-First para registro",
+      "points": 8,
+      "service": "Traceability + frontend",
+      "status": "Integrated baseline"
+    },
+    {
+      "id": "US15",
+      "title": "Sincronización automática de eventos",
+      "points": 5,
+      "service": "Traceability + frontend",
+      "status": "Integrated baseline"
+    },
+    {
+      "id": "US16",
+      "title": "Prevención de duplicados por reintentos",
+      "points": 3,
+      "service": "Traceability + frontend",
+      "status": "Integrated baseline"
+    },
+    {
+      "id": "US17",
+      "title": "Generación de Código QR identificador",
+      "points": 3,
+      "service": "Traceability + frontend",
+      "status": "Integrated baseline"
+    },
+    {
+      "id": "US19",
+      "title": "Escaneo para aceptar custodia",
+      "points": 3,
+      "service": "Logistics",
+      "status": "In review"
+    },
+    {
+      "id": "US24",
+      "title": "Registro y comparación de peso en checkpoints",
+      "points": 3,
+      "service": "Logistics",
+      "status": "In review"
+    },
+    {
+      "id": "US26",
+      "title": "Recepción de lote en planta",
+      "points": 3,
+      "service": "Logistics",
+      "status": "In review"
+    },
+    {
+      "id": "US33",
+      "title": "Recepción de material vía código QR",
+      "points": 3,
+      "service": "Jewelry",
+      "status": "In review"
+    },
+    {
+      "id": "US35",
+      "title": "Registro manual de material externo",
+      "points": 3,
+      "service": "Jewelry",
+      "status": "In review"
+    },
+    {
+      "id": "US36",
+      "title": "Separación estricta de inventarios en UI",
+      "points": 5,
+      "service": "Jewelry",
+      "status": "In review"
+    },
+    {
+      "id": "US37",
+      "title": "Bloqueo de mezcla de inventarios",
+      "points": 5,
+      "service": "Jewelry",
+      "status": "In review"
+    },
+    {
+      "id": "US53",
+      "title": "Asociación de materiales a la joya (propuesta)",
+      "points": 5,
+      "service": "Jewelry",
+      "status": "In review"
+    },
+    {
+      "id": "US40",
+      "title": "Solicitud manual de certificado",
+      "points": 3,
+      "service": "Certification",
+      "status": "In review"
+    },
+    {
+      "id": "US41",
+      "title": "Validación de árbol genealógico",
+      "points": 8,
+      "service": "Certification",
+      "status": "In review"
+    },
+    {
+      "id": "US42",
+      "title": "Generación dinámica de PDF (Certificado)",
+      "points": 5,
+      "service": "Certification",
+      "status": "In review"
+    },
+    {
+      "id": "US43",
+      "title": "Revocación de certificados",
+      "points": 3,
+      "service": "Certification",
+      "status": "In review"
+    },
+    {
+      "id": "US51",
+      "title": "Consulta pública de trazabilidad (propuesta)",
+      "points": 5,
+      "service": "Certification",
+      "status": "In review"
+    },
+    {
+      "id": "US52",
+      "title": "Consulta de vigencia del certificado (propuesta)",
+      "points": 3,
+      "service": "Certification",
+      "status": "In review"
+    },
+    {
+      "id": "US44",
+      "title": "Visualización de certificados emitidos",
+      "points": 2,
+      "service": "Certification",
+      "status": "In review"
+    },
+    {
+      "id": "US27",
+      "title": "Registro de análisis químico (Leyes)",
+      "points": 3,
+      "service": "Processing",
+      "status": "In review"
+    },
+    {
+      "id": "US28",
+      "title": "División de lotes (Sub-lotes)",
+      "points": 8,
+      "service": "Processing",
+      "status": "In review"
+    },
+    {
+      "id": "US29",
+      "title": "Fusión de lotes limpios",
+      "points": 5,
+      "service": "Processing",
+      "status": "In review"
+    },
+    {
+      "id": "US30",
+      "title": "Declaración de Merma Técnica",
+      "points": 3,
+      "service": "Processing",
+      "status": "In review"
+    },
+    {
+      "id": "US31",
+      "title": "Actualización de peso purificado",
+      "points": 3,
+      "service": "Processing",
+      "status": "In review"
+    },
+    {
+      "id": "US32",
+      "title": "Marcado de lote Procesado",
+      "points": 2,
+      "service": "Processing",
+      "status": "In review"
+    },
+    {
+      "id": "US18",
+      "title": "Cancelación de registro erróneo",
+      "points": 2,
+      "service": "Traceability",
+      "status": "In review"
+    },
+    {
+      "id": "US23",
+      "title": "Reporte de incidentes con evidencia fotográfica",
+      "points": 5,
+      "service": "Logistics",
+      "status": "In review"
+    },
+    {
+      "id": "US25",
+      "title": "Delegación de custodia intermedia",
+      "points": 5,
+      "service": "Logistics",
+      "status": "In review"
+    },
+    {
+      "id": "US45",
+      "title": "Dashboard de operaciones en vivo",
+      "points": 8,
+      "service": "Traceability + frontend",
+      "status": "In review"
+    },
+    {
+      "id": "US46",
+      "title": "Reporte histórico de Mermas",
+      "points": 5,
+      "service": "Traceability + frontend",
+      "status": "In review"
+    },
+    {
+      "id": "US47",
+      "title": "Exportación de evidencias para revisión ESG",
+      "points": 3,
+      "service": "Traceability + frontend",
+      "status": "In review"
+    },
+    {
+      "id": "US13",
+      "title": "Validación de ubicación en geocerca",
+      "points": 5,
+      "service": "Traceability",
+      "status": "In review"
+    },
+    {
+      "id": "US02",
+      "title": "Inicio de sesión seguro",
+      "points": 3,
+      "service": "Identity",
+      "status": "In review"
+    },
+    {
+      "id": "US05",
+      "title": "Gestión de Roles y Permisos",
+      "points": 5,
+      "service": "Identity",
+      "status": "In review"
+    },
+    {
+      "id": "US07",
+      "title": "Registro de balanzas IoT",
+      "points": 8,
+      "service": "Devices",
+      "status": "In review"
+    },
+    {
+      "id": "US08",
+      "title": "Registro de calibración de sensores",
+      "points": 3,
+      "service": "Devices",
+      "status": "In review"
+    },
+    {
+      "id": "US09",
+      "title": "Alertas de desconexión Edge",
+      "points": 5,
+      "service": "Devices",
+      "status": "In review"
+    },
+    {
+      "id": "US10",
+      "title": "Desactivación de hardware comprometido",
+      "points": 5,
+      "service": "Devices",
+      "status": "In review"
+    },
+    {
+      "id": "US11",
+      "title": "Monitoreo de batería de sensores",
+      "points": 2,
+      "service": "Devices",
+      "status": "In review"
+    }
+  ],
+  "sprint4": [
+    {
+      "id": "US20",
+      "title": "Captura periódica de GPS en ruta",
+      "points": 5
+    },
+    {
+      "id": "US21",
+      "title": "Alerta por desvío geográfico",
+      "points": 5
+    },
+    {
+      "id": "US22",
+      "title": "Alerta por demora extrema",
+      "points": 3
+    },
+    {
+      "id": "US34",
+      "title": "Ingesta automatizada vía API (ERP)",
+      "points": 8
+    },
+    {
+      "id": "US01",
+      "title": "Registro de cuenta corporativa",
+      "points": 3
+    },
+    {
+      "id": "US06",
+      "title": "Generación de API Keys (Joyerías)",
+      "points": 5
+    },
+    {
+      "id": "US04",
+      "title": "Recuperación de contraseña",
+      "points": 2
+    },
+    {
+      "id": "US03",
+      "title": "Autenticación Multifactor (2FA)",
+      "points": 5
+    },
+    {
+      "id": "US38",
+      "title": "Rotación de API Keys (Seguridad)",
+      "points": 3
+    },
+    {
+      "id": "US39",
+      "title": "Control de frecuencia de solicitudes de integración",
+      "points": 8
+    },
+    {
+      "id": "US48",
+      "title": "Upgrade de plan de Suscripción",
+      "points": 5
+    },
+    {
+      "id": "US49",
+      "title": "Downgrade de plan a fin de ciclo",
+      "points": 3
+    },
+    {
+      "id": "US50",
+      "title": "Historial de facturación B2B",
+      "points": 2
+    }
+  ]
+}

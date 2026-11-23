@@ -2,8 +2,14 @@ import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 
 export const migrationSets = {
-  identity: ['identity/003_sessions.sql'],
-  traceability: ['lots/001_register_lots.sql', 'messaging/002_inbox_outbox.sql']
+  identity: ['identity/003_sessions.sql', 'identity/004_roles.sql', 'identity/005_catalog.js'],
+  traceability: ['lots/001_register_lots.sql', 'messaging/002_inbox_outbox.sql', 'lots/005_lifecycle.sql', 'lots/006_status.js', 'lots/007_delegations.sql', 'lots/008_states.js', 'lots/009_processing.sql', 'lots/010_geofences.sql'],
+  logistics: ['logistics/001_custody.sql', 'logistics/002_shipments.sql'],
+  processing: ['processing/001_processing.sql'],
+  jewelry: ['jewelry/001_inventory.sql'],
+  certification: ['certification/001_certificates.sql'],
+  devices: ['devices/001_devices.sql'],
+  reporting: ['reporting/001_reporting.sql']
 };
 
 export async function runMigrations(pool, names) {
@@ -28,8 +34,11 @@ export async function runMigrations(pool, names) {
         continue;
       }
       // MySQL commits DDL implicitly. Files contain only restartable CREATE TABLE statements.
-      for (const statement of sql.split(';').map(value => value.trim()).filter(Boolean)) {
-        await tx.query(statement);
+      if (file.endsWith('.js')) {
+        const migration = await import(new URL(`../../../../database/migrations/${file}`, import.meta.url));
+        await migration.up(tx);
+      } else {
+        for (const statement of sql.split(';').map(value => value.trim()).filter(Boolean)) await tx.query(statement);
       }
       await tx.execute('INSERT INTO schema_migrations(name,checksum) VALUES(?,?)', [file, checksum]);
       console.log(`Migración MySQL aplicada: ${file}`);

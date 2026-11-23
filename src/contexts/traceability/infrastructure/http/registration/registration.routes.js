@@ -1,3 +1,4 @@
+import { requirePermission } from '../../../../../shared/infrastructure/http/permissions.js';
 import { Router } from 'express';
 import { assertUuid } from '../../../domain/validation/domainAssertions.js';
 import { DomainError } from '../../../domain/errors/DomainError.js';
@@ -5,7 +6,7 @@ import { DomainError } from '../../../domain/errors/DomainError.js';
 export function createRegistrationRouter({ processor,getMineralLotDetails,authenticate }) {
     if (typeof authenticate !== 'function') throw new Error('Falta autenticación');
     const router = Router();
-    router.post('/',authenticate,async (req,res) => {
+    router.post('/',authenticate,requirePermission('lots.register'),async (req,res) => {
         const identity = req.identity;
         if (!identity?.tenantId || !identity?.userId?.trim()) {
             return res.status(401).json({ error: {
@@ -14,10 +15,10 @@ export function createRegistrationRouter({ processor,getMineralLotDetails,authen
         try {
             const tenantId = assertUuid(identity.tenantId,'tenantId').toLowerCase();
             const clientEventId = assertUuid(req.body?.clientEventId,'clientEventId');
-            const { mineralType,weight,weightUnit,originEvidence } = req.body ?? {};
+            const { mineralType,weight,weightUnit,originEvidence,location,concessionId } = req.body ?? {};
             const outcome = await processor.register({ tenantId,
                 actorId: identity.userId,clientEventId,
-                payload: JSON.parse(JSON.stringify({ mineralType,weight,weightUnit,originEvidence })) });
+                payload: JSON.parse(JSON.stringify({ mineralType,weight,weightUnit,originEvidence,location,concessionId })) });
             if (['Accepted','AlreadyProcessed'].includes(outcome.status)) {
                 const current = outcome.status === 'AlreadyProcessed'
                     ? await getMineralLotDetails.execute({ lotId: outcome.lotId,tenantId }) : null;

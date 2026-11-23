@@ -1,0 +1,1704 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "EventOre Processing",
+    "version": "1.3.0",
+    "description": "Ocho servicios con MySQL 8.4 independiente: Identity, Traceability, Logistics, Processing, Jewelry, Certification, Devices y Reporting. La cookie se obtiene mediante login. Los reportes de dispositivos usan Bearer propio. Los comandos conservan operationId y cuerpo ante fallos sin confirmación. Los ejemplos son datos de prueba, no credenciales."
+  },
+  "servers": [
+    {
+      "url": "/api/v1"
+    }
+  ],
+  "security": [
+    {
+      "session": []
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "eventore_session"
+      },
+      "deviceBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "Payload": {
+        "type": "object",
+        "required": [
+          "mineralType",
+          "weight",
+          "weightUnit",
+          "originEvidence"
+        ],
+        "properties": {
+          "mineralType": {
+            "type": "string"
+          },
+          "weight": {
+            "type": "string",
+            "example": "125.50",
+            "description": "Exact positive decimal string: at most 35 integer digits and 30 fractional digits; INVALID_WEIGHT_PRECISION if exceeded.",
+            "maxLength": 66
+          },
+          "weightUnit": {
+            "type": "string",
+            "enum": [
+              "g",
+              "kg",
+              "t"
+            ]
+          },
+          "originEvidence": {
+            "type": "object",
+            "required": [
+              "reference",
+              "source"
+            ],
+            "properties": {
+              "reference": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              }
+            }
+          },
+          "location": {
+            "type": "object",
+            "nullable": true,
+            "properties": {
+              "latitude": {
+                "type": "number",
+                "minimum": -90,
+                "maximum": 90
+              },
+              "longitude": {
+                "type": "number",
+                "minimum": -180,
+                "maximum": 180
+              }
+            }
+          },
+          "concessionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          }
+        }
+      },
+      "Event": {
+        "type": "object",
+        "required": [
+          "clientEventId",
+          "eventType",
+          "occurredAt",
+          "dependencies",
+          "payload"
+        ],
+        "properties": {
+          "clientEventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventType": {
+            "type": "string",
+            "enum": [
+              "LotRegistered"
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp, years 1000-9999 in UTC, at most six fractional second digits."
+          },
+          "dependencies": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Empty for LotRegistered in Sprint 1"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/Payload"
+          }
+        }
+      },
+      "Outcome": {
+        "type": "object",
+        "properties": {
+          "clientEventId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Accepted",
+              "AlreadyProcessed",
+              "Conflict",
+              "Rejected"
+            ]
+          },
+          "lotId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reason": {
+            "type": "string",
+            "nullable": true
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/processing/lots/{lotId}": {
+      "get": {
+        "summary": "Consultar estado, análisis y hechos de planta",
+        "tags": [
+          "Processing"
+        ],
+        "description": "Consultar estado, análisis y hechos de planta",
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "snapshot": {
+                      "type": "object",
+                      "properties": {
+                        "lotId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "version": {
+                          "type": "integer"
+                        },
+                        "weight": {
+                          "type": "string"
+                        },
+                        "weightUnit": {
+                          "type": "string"
+                        },
+                        "originEvidenceStatus": {
+                          "type": "string"
+                        },
+                        "restrictions": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        },
+                        "history": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        },
+                        "delegations": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        },
+                        "facts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object"
+                          }
+                        },
+                        "latestAssay": {
+                          "type": "string",
+                          "nullable": true
+                        }
+                      }
+                    },
+                    "events": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "snapshot": {
+                    "lotId": "22222222-2222-4222-8222-222222222222",
+                    "status": "Processing",
+                    "version": 3,
+                    "weight": "100",
+                    "weightUnit": "kg",
+                    "originEvidenceStatus": "PendingReview",
+                    "restrictions": [],
+                    "history": [],
+                    "delegations": [],
+                    "facts": [],
+                    "latestAssay": null
+                  },
+                  "events": []
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Datos inválidos"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación requerida",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Autenticación requerida"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso u origen no autorizado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Permiso u origen no autorizado"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible para la organización",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Recurso no visible para la organización"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado, versión, evidencia o balance incompatible",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Estado, versión, evidencia o balance incompatible"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio u operación sin confirmar; conservar identificador original",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio u operación sin confirmar; conservar identificador original"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_processing_lots_lotId",
+        "x-permission": "lots.read",
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/processing/lots/{lotId}/genealogy": {
+      "get": {
+        "summary": "Consultar genealogía completa sin ciclos ni relaciones faltantes",
+        "tags": [
+          "Processing"
+        ],
+        "description": "Consultar genealogía completa sin ciclos ni relaciones faltantes",
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "lotId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "nodes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "lotId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "version": {
+                            "type": "integer"
+                          },
+                          "weight": {
+                            "type": "string"
+                          },
+                          "weightUnit": {
+                            "type": "string"
+                          },
+                          "originEvidenceStatus": {
+                            "type": "string"
+                          },
+                          "restrictions": {
+                            "type": "array",
+                            "items": {
+                              "type": "object"
+                            }
+                          },
+                          "history": {
+                            "type": "array",
+                            "items": {
+                              "type": "object"
+                            }
+                          },
+                          "delegations": {
+                            "type": "array",
+                            "items": {
+                              "type": "object"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "edges": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "roots": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "format": "uuid"
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "lotId": "22222222-2222-4222-8222-222222222222",
+                  "nodes": [
+                    {
+                      "lotId": "22222222-2222-4222-8222-222222222222",
+                      "status": "InTransit",
+                      "version": 3,
+                      "weight": "100",
+                      "weightUnit": "kg",
+                      "originEvidenceStatus": "PendingReview",
+                      "restrictions": [],
+                      "history": [],
+                      "delegations": []
+                    }
+                  ],
+                  "edges": [],
+                  "roots": [
+                    "22222222-2222-4222-8222-222222222222"
+                  ]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Datos inválidos"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación requerida",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Autenticación requerida"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso u origen no autorizado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Permiso u origen no autorizado"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible para la organización",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Recurso no visible para la organización"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado, versión, evidencia o balance incompatible",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Estado, versión, evidencia o balance incompatible"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio u operación sin confirmar; conservar identificador original",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio u operación sin confirmar; conservar identificador original"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "get_processing_lots_lotId_genealogy",
+        "x-permission": "lots.read",
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/processing/lots/{lotId}/start": {
+      "post": {
+        "summary": "ProcessingStarted",
+        "tags": [
+          "Processing"
+        ],
+        "description": "Pureza 0–100. Correcciones identifican análisis anterior y motivo. División/fusión consumen entradas una sola vez; balance exacto; origen compatible en fusión. Merma técnica >5% crea restricción. Cierre requiere análisis y etapa documentada sin restricciones. Las masas son cadenas decimales exactas.",
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "operationId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "lotId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "action": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "example": {
+                  "operationId": "33333333-3333-4333-8333-333333333333",
+                  "lotId": "22222222-2222-4222-8222-222222222222",
+                  "action": "ProcessingStarted",
+                  "status": "Processing",
+                  "version": 4
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Datos inválidos"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación requerida",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Autenticación requerida"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso u origen no autorizado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Permiso u origen no autorizado"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible para la organización",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Recurso no visible para la organización"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado, versión, evidencia o balance incompatible",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Estado, versión, evidencia o balance incompatible"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio u operación sin confirmar; conservar identificador original",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio u operación sin confirmar; conservar identificador original"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_processing_lots_lotId_start",
+        "x-permission": "processing.manage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operationId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expectedVersion": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion"
+                ]
+              },
+              "example": {
+                "operationId": "33333333-3333-4333-8333-333333333333",
+                "expectedVersion": 3
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/processing/lots/{lotId}/assays": {
+      "post": {
+        "summary": "AssayRecorded",
+        "tags": [
+          "Processing"
+        ],
+        "description": "Pureza 0–100. Correcciones identifican análisis anterior y motivo. División/fusión consumen entradas una sola vez; balance exacto; origen compatible en fusión. Merma técnica >5% crea restricción. Cierre requiere análisis y etapa documentada sin restricciones. Las masas son cadenas decimales exactas.",
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "operationId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "lotId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "action": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "example": {
+                  "operationId": "33333333-3333-4333-8333-333333333333",
+                  "lotId": "22222222-2222-4222-8222-222222222222",
+                  "action": "AssayRecorded",
+                  "status": "Processing",
+                  "version": 4
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Datos inválidos"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación requerida",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Autenticación requerida"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso u origen no autorizado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Permiso u origen no autorizado"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible para la organización",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Recurso no visible para la organización"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado, versión, evidencia o balance incompatible",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Estado, versión, evidencia o balance incompatible"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio u operación sin confirmar; conservar identificador original",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio u operación sin confirmar; conservar identificador original"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_processing_lots_lotId_assays",
+        "x-permission": "processing.manage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operationId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expectedVersion": {
+                    "type": "integer"
+                  },
+                  "purity": {
+                    "type": "string"
+                  },
+                  "evidenceRef": {
+                    "type": "string"
+                  },
+                  "correctionOf": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "correctionReason": {
+                    "type": "string",
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "purity",
+                  "evidenceRef"
+                ]
+              },
+              "example": {
+                "operationId": "33333333-3333-4333-8333-333333333333",
+                "expectedVersion": 3,
+                "purity": "99.5",
+                "evidenceRef": "LAB-001",
+                "correctionOf": null,
+                "correctionReason": null
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/processing/lots/{lotId}/purification": {
+      "post": {
+        "summary": "PurificationRecorded",
+        "tags": [
+          "Processing"
+        ],
+        "description": "Pureza 0–100. Correcciones identifican análisis anterior y motivo. División/fusión consumen entradas una sola vez; balance exacto; origen compatible en fusión. Merma técnica >5% crea restricción. Cierre requiere análisis y etapa documentada sin restricciones. Las masas son cadenas decimales exactas.",
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "operationId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "lotId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "action": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "example": {
+                  "operationId": "33333333-3333-4333-8333-333333333333",
+                  "lotId": "22222222-2222-4222-8222-222222222222",
+                  "action": "PurificationRecorded",
+                  "status": "Processing",
+                  "version": 4
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Datos inválidos"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación requerida",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Autenticación requerida"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso u origen no autorizado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Permiso u origen no autorizado"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible para la organización",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Recurso no visible para la organización"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado, versión, evidencia o balance incompatible",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Estado, versión, evidencia o balance incompatible"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio u operación sin confirmar; conservar identificador original",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio u operación sin confirmar; conservar identificador original"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_processing_lots_lotId_purification",
+        "x-permission": "processing.manage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operationId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expectedVersion": {
+                    "type": "integer"
+                  },
+                  "netWeight": {
+                    "type": "string"
+                  },
+                  "weightUnit": {
+                    "type": "string"
+                  },
+                  "removedKind": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  },
+                  "evidenceRef": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "netWeight",
+                  "weightUnit",
+                  "removedKind",
+                  "reason",
+                  "evidenceRef"
+                ]
+              },
+              "example": {
+                "operationId": "33333333-3333-4333-8333-333333333333",
+                "expectedVersion": 3,
+                "netWeight": "95",
+                "weightUnit": "kg",
+                "removedKind": "Impurities",
+                "reason": "Separación documentada",
+                "evidenceRef": "PROC-001"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/processing/lots/{lotId}/losses": {
+      "post": {
+        "summary": "TechnicalLossRecorded",
+        "tags": [
+          "Processing"
+        ],
+        "description": "Pureza 0–100. Correcciones identifican análisis anterior y motivo. División/fusión consumen entradas una sola vez; balance exacto; origen compatible en fusión. Merma técnica >5% crea restricción. Cierre requiere análisis y etapa documentada sin restricciones. Las masas son cadenas decimales exactas.",
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "operationId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "lotId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "action": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "example": {
+                  "operationId": "33333333-3333-4333-8333-333333333333",
+                  "lotId": "22222222-2222-4222-8222-222222222222",
+                  "action": "TechnicalLossRecorded",
+                  "status": "Processing",
+                  "version": 4
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Datos inválidos"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación requerida",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Autenticación requerida"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso u origen no autorizado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Permiso u origen no autorizado"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible para la organización",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Recurso no visible para la organización"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado, versión, evidencia o balance incompatible",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Estado, versión, evidencia o balance incompatible"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio u operación sin confirmar; conservar identificador original",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio u operación sin confirmar; conservar identificador original"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_processing_lots_lotId_losses",
+        "x-permission": "processing.manage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operationId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expectedVersion": {
+                    "type": "integer"
+                  },
+                  "lossWeight": {
+                    "type": "string"
+                  },
+                  "weightUnit": {
+                    "type": "string"
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "lossWeight",
+                  "weightUnit",
+                  "reason"
+                ]
+              },
+              "example": {
+                "operationId": "33333333-3333-4333-8333-333333333333",
+                "expectedVersion": 3,
+                "lossWeight": "1",
+                "weightUnit": "kg",
+                "reason": "Merma documentada"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/processing/lots/{lotId}/transformations": {
+      "post": {
+        "summary": "LotsTransformed",
+        "tags": [
+          "Processing"
+        ],
+        "description": "Pureza 0–100. Correcciones identifican análisis anterior y motivo. División/fusión consumen entradas una sola vez; balance exacto; origen compatible en fusión. Merma técnica >5% crea restricción. Cierre requiere análisis y etapa documentada sin restricciones. Las masas son cadenas decimales exactas.",
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "operationId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "lotId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "action": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "example": {
+                  "operationId": "33333333-3333-4333-8333-333333333333",
+                  "lotId": "22222222-2222-4222-8222-222222222222",
+                  "action": "LotsTransformed",
+                  "status": "Consumed",
+                  "version": 4
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Datos inválidos"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación requerida",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Autenticación requerida"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso u origen no autorizado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Permiso u origen no autorizado"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible para la organización",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Recurso no visible para la organización"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado, versión, evidencia o balance incompatible",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Estado, versión, evidencia o balance incompatible"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio u operación sin confirmar; conservar identificador original",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio u operación sin confirmar; conservar identificador original"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_processing_lots_lotId_transformations",
+        "x-permission": "processing.manage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operationId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expectedVersion": {
+                    "type": "integer"
+                  },
+                  "inputs": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "lotId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "expectedVersion": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  },
+                  "plan": {
+                    "type": "object",
+                    "properties": {
+                      "mode": {
+                        "type": "string"
+                      },
+                      "outputs": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "weight": {
+                              "type": "string"
+                            },
+                            "weightUnit": {
+                              "type": "string"
+                            },
+                            "kind": {
+                              "type": "string"
+                            },
+                            "destination": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "technicalLoss": {
+                        "type": "object",
+                        "properties": {
+                          "weight": {
+                            "type": "string"
+                          },
+                          "weightUnit": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "impurities": {
+                        "type": "object",
+                        "properties": {
+                          "weight": {
+                            "type": "string"
+                          },
+                          "weightUnit": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "reason": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "inputs",
+                  "plan"
+                ]
+              },
+              "example": {
+                "operationId": "33333333-3333-4333-8333-333333333333",
+                "expectedVersion": 3,
+                "inputs": [
+                  {
+                    "lotId": "22222222-2222-4222-8222-222222222222",
+                    "expectedVersion": 3
+                  }
+                ],
+                "plan": {
+                  "mode": "Split",
+                  "outputs": [
+                    {
+                      "weight": "50",
+                      "weightUnit": "kg",
+                      "kind": "Output",
+                      "destination": "Línea A"
+                    },
+                    {
+                      "weight": "50",
+                      "weightUnit": "kg",
+                      "kind": "Remainder",
+                      "destination": "Reserva"
+                    }
+                  ],
+                  "technicalLoss": {
+                    "weight": "0",
+                    "weightUnit": "kg"
+                  },
+                  "impurities": {
+                    "weight": "0",
+                    "weightUnit": "kg"
+                  },
+                  "reason": "Balance de división"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/processing/lots/{lotId}/complete": {
+      "post": {
+        "summary": "ProcessingCompleted",
+        "tags": [
+          "Processing"
+        ],
+        "description": "Pureza 0–100. Correcciones identifican análisis anterior y motivo. División/fusión consumen entradas una sola vez; balance exacto; origen compatible en fusión. Merma técnica >5% crea restricción. Cierre requiere análisis y etapa documentada sin restricciones. Las masas son cadenas decimales exactas.",
+        "responses": {
+          "200": {
+            "description": "Resultado confirmado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "operationId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "lotId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "action": {
+                      "type": "string"
+                    },
+                    "status": {
+                      "type": "string"
+                    },
+                    "version": {
+                      "type": "integer"
+                    }
+                  }
+                },
+                "example": {
+                  "operationId": "33333333-3333-4333-8333-333333333333",
+                  "lotId": "22222222-2222-4222-8222-222222222222",
+                  "action": "ProcessingCompleted",
+                  "status": "Processed",
+                  "version": 4
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "INVALID_INPUT",
+                    "message": "Datos inválidos"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticación requerida",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "UNAUTHORIZED",
+                    "message": "Autenticación requerida"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Permiso u origen no autorizado",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "FORBIDDEN",
+                    "message": "Permiso u origen no autorizado"
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Recurso no visible para la organización",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "NOT_FOUND",
+                    "message": "Recurso no visible para la organización"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Estado, versión, evidencia o balance incompatible",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "CONFLICT",
+                    "message": "Estado, versión, evidencia o balance incompatible"
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Servicio u operación sin confirmar; conservar identificador original",
+            "content": {
+              "application/json": {
+                "example": {
+                  "error": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Servicio u operación sin confirmar; conservar identificador original"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "post_processing_lots_lotId_complete",
+        "x-permission": "processing.manage",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "operationId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "expectedVersion": {
+                    "type": "integer"
+                  },
+                  "reviewNote": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "operationId",
+                  "expectedVersion",
+                  "reviewNote"
+                ]
+              },
+              "example": {
+                "operationId": "33333333-3333-4333-8333-333333333333",
+                "expectedVersion": 3,
+                "reviewNote": "Etapas, balance y análisis completos"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
