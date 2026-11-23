@@ -170,3 +170,6 @@ config.bat
 !.env.compose.example
 playwright-report/
 test-results/
+
+!.env.example
+!.env.compose.example

@@ -1,3 +1,4 @@
+import { requirePermission } from '../../../../shared/infrastructure/http/permissions.js';
 import { Router } from 'express';
 
 import {
@@ -23,6 +24,7 @@ export function createSynchronizationRouter({
     router.post(
         '/synchronize',
         authenticate,
+        requirePermission('lots.register'),
         controller
     );
 
