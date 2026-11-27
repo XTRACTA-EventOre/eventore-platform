@@ -3,7 +3,7 @@ import { createHash,randomBytes,randomInt,randomUUID,timingSafeEqual } from 'nod
 import { hashPassword } from '../../shared/infrastructure/http/sessionAuth.js';
 import { transaction } from '../../shared/infrastructure/persistence/transaction.js';
 import { OperationError } from '../../shared/application/OperationError.js';
-import { apiError,text } from '../../shared/infrastructure/http/operationHttp.js';
+import { apiError,text,uuid } from '../../shared/infrastructure/http/operationHttp.js';
 
 const hash = value=>createHash('sha256').update(value).digest('hex');
 const fail = (status,code,message)=>new OperationError(status,code,message);
@@ -51,6 +51,11 @@ export function accountsRouter(pool,send) {
       throw error;
     }
     return {requestId:id,status:'Pending'};
+  }));
+  router.post('/registration-status',handle(async body=>{
+    const [[entry]]=await pool.execute('SELECT status FROM corporate_requests WHERE id=? AND email=?',[uuid(body.requestId),emailAddress(body.email)]);
+    if(!entry)throw fail(404,'NOT_FOUND','Solicitud no disponible');
+    return {status:entry.status};
   }));
   router.post('/recovery',handle(async body=>{
     const email=emailAddress(body.email);
