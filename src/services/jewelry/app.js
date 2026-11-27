@@ -1,4 +1,5 @@
 import {fileURLToPath} from 'node:url';
+import { erpRouter } from './erp.js';
 import express from 'express';
 import { createRemoteAuth } from '../../shared/infrastructure/http/remoteIdentity.js';
 import { createSessionAuth } from '../../shared/infrastructure/http/sessionAuth.js';
@@ -10,6 +11,7 @@ export function createJewelryApp(options){
   const {identityUrl,internalSecret,appBaseUrl,fetchImpl=fetch}=options,app=express(),service=new JewelryService(options);
   app.disable('x-powered-by');app.use(express.json());app.use(createSessionAuth({pool:null,appBaseUrl}).sameOrigin);
   const auth=createRemoteAuth({identityUrl,internalSecret,fetchImpl}),access=requirePermission('inventory.manage');
+  app.use('/api/v1/jewelry/erp',erpRouter(options,auth,access));
   const handle=fn=>async(req,res)=>{try{const result=await fn(req);res.json(result);}catch(error){apiError(res,error);}};
  app.get('/api/v1/jewelry/openapi.json',(_req,res)=>res.sendFile(fileURLToPath(new URL('../../../docs/jewelry-openapi.json',import.meta.url))));
   app.get('/health',(_req,res)=>res.json({status:'ok',service:'jewelry'}));

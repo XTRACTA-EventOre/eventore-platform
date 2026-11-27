@@ -28,6 +28,7 @@ export class ShipmentService {
   async confirm(command, result) {
     if (result.operationId !== command.operationId || result.lotId !== command.lotId || result.action !== command.action || result.actorId !== command.actorId || result.version !== command.expectedVersion + 1) throw new OperationError(503, 'INVALID_RESPONSE', 'Respuesta de trazabilidad sin confirmar');
     return this.ledger.confirm(command, result, async tx => {
+      if(command.action==='PlantReceived') await tx.execute('UPDATE trip_routes SET received_at=UTC_TIMESTAMP(3),delayed_at=IF(deadline<UTC_TIMESTAMP(3),deadline,delayed_at) WHERE tenant_id=? AND lot_id=? AND received_at IS NULL',[command.tenantId,command.lotId]);
       await tx.execute('INSERT INTO shipment_events(tenant_id,operation_id,lot_id,action,actor_id,result) VALUES(?,?,?,?,?,?)', [command.tenantId, command.operationId, command.lotId, command.action, command.actorId, JSON.stringify(result)]);
     });
   }

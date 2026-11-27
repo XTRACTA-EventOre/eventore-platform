@@ -32,7 +32,7 @@ function sessionToken(req) {
   return /^[a-f0-9]{64}$/.test(value ?? '') ? value : null;
 }
 
-export function createSessionAuth({ pool, appBaseUrl, secure = false }) {
+export function createSessionAuth({ pool, appBaseUrl, secure = false, secondFactor }) {
   const origin = new URL(appBaseUrl).origin;
   const options = { httpOnly: true, sameSite: 'strict', secure, path: '/', maxAge: lifetime };
   const unauthorized = res => res.status(401).json({ error: {
@@ -87,6 +87,10 @@ export function createSessionAuth({ pool, appBaseUrl, secure = false }) {
         await tx.commit(); return res.status(401).json({ error: { code: 'UNAUTHORIZED', message: 'No se pudo iniciar sesión. Comprueba tus credenciales; después de tres intentos fallidos espera quince minutos o contacta al administrador para recuperar el acceso.' } });
       }
       await tx.execute('UPDATE app_users SET failed_attempts=0,locked_until=NULL WHERE id=?', [user.id]);
+      if (secondFactor && !await secondFactor(tx,user,req.body?.code)) {
+        await tx.commit();
+        return res.status(401).json({error:{code:'MFA_REQUIRED',message:req.body?.code?'Código incorrecto o vencido. Completa el segundo factor.':'Ingresa el código enviado a tu correo.'}});
+      }
       await tx.execute('DELETE FROM app_sessions WHERE expires_at<=UTC_TIMESTAMP(3)');
       const token = randomBytes(32).toString('hex');
       await tx.execute('INSERT INTO app_sessions(token_hash,user_id,expires_at) VALUES(?,?,?)',

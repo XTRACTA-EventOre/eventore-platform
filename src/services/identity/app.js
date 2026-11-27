@@ -1,17 +1,21 @@
+import { accountsRouter, challenge } from './accounts.js';
+import { billingRouter } from './billing.js';
 import express from 'express';
 import { createSessionAuth } from '../../shared/infrastructure/http/sessionAuth.js';
 import { createAccessRouter } from './access.js';
 import { requireAnyPermission } from '../../shared/infrastructure/http/permissions.js';
 import { fileURLToPath } from 'node:url';
 
-export function createIdentityApp({ pool, appBaseUrl, internalSecret, secure = false }) {
+export function createIdentityApp({ pool, appBaseUrl, internalSecret, secure = false, requireMfa = false, sendCode, providerSecret=process.env.BILLING_PROVIDER_SECRET }) {
   if (!internalSecret) throw new Error('Configura INTERNAL_AUTH_SECRET');
   const app = express();
   app.disable('x-powered-by');
   app.use(express.json());
-  const auth = createSessionAuth({ pool, appBaseUrl, secure });
+  const auth = createSessionAuth({ pool, appBaseUrl, secure, secondFactor:requireMfa?(db,user,code)=>challenge(db,user,'login',code,sendCode):null });
   app.use(auth.sameOrigin);
   app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'identity' }));
+  app.use('/api/v1/auth', accountsRouter(pool,sendCode));
+  app.use('/api/v1/auth/billing',billingRouter(pool,auth.authenticate,providerSecret));
   app.use('/api/v1/auth', auth.router);
   app.get('/api/v1/auth/openapi.json', (_req, res) => res.sendFile(fileURLToPath(new URL('../../../docs/identity-openapi.json', import.meta.url))));
   app.use('/api/v1/auth', createAccessRouter({ pool, authenticate: auth.authenticate }));

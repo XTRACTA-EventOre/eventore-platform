@@ -34,7 +34,7 @@ export function createGatewayApp({ identityUrl, traceabilityUrl, logisticsUrl, p
       const upstream = await fetchImpl(url, { method: req.method, headers, body,
         duplex: body ? 'half' : undefined, redirect: 'manual', signal: AbortSignal.timeout(10000) });
       res.status(upstream.status);
-      for (const name of ['content-type', 'cache-control', 'location']) {
+      for (const name of ['content-type', 'cache-control', 'location', 'retry-after', 'content-disposition']) {
         const value = upstream.headers.get(name); if (value) res.set(name, value);
       }
       const cookies = upstream.headers.getSetCookie?.() ?? [];

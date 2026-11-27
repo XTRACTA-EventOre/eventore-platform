@@ -1,0 +1,92 @@
+import {describe,test,expect,beforeAll,afterAll,jest} from '@jest/globals';
+import request from 'supertest';
+import {randomUUID} from 'node:crypto';
+import {serviceHarness} from './support/serviceHarness.js';
+import {createIdentityApp} from '../src/services/identity/app.js';
+import {distanceKm,transitions,detectDelays} from '../src/services/logistics/tracking.js';
+
+const corridor=[{latitude:0,longitude:0},{latitude:0,longitude:1}];
+test('el corredor distingue distancia al segmento, desvío estricto y reingreso',()=>{
+ expect(distanceKm({latitude:0,longitude:.5},corridor)).toBeLessThan(.001);
+ expect(distanceKm({latitude:.05,longitude:.5},corridor)).toBeGreaterThan(5);
+ expect(distanceKm({latitude:0,longitude:2},corridor)).toBeGreaterThan(110);
+ expect(transitions([5,5.1,6,4.9].map(distance_km=>({distance_km}))).map(p=>p.type)).toEqual(['Deviation','Reentry']);
+});
+jest.setTimeout(90000);
+(process.env.TEST_DATABASE_URL?describe:describe.skip)('Sprint 4 con MySQL',()=>{
+ let h;
+ beforeAll(async()=>{h=await serviceHarness();});
+ afterAll(async()=>{await h?.close();});
+ test('registro pendiente y duplicado, MFA previo a la sesión y recuperación de un uso',async()=>{
+  const mail=new Map();
+  const app=createIdentityApp({pool:h.runtimes.identity.pool,appBaseUrl:'http://localhost:4173',internalSecret:h.internalSecret,requireMfa:true,sendCode:async m=>mail.set(m.purpose,m.code)});
+  const post=(path,body)=>request(app).post('/api/v1/auth/'+path).send(body);
+  const email='admin@example.test', password='Acceptance-test-password';
+  const form={email:'new@example.test',companyId:'20123456789',companyName:'Empresa demo',evidence:'EXP-1',password};
+  expect((await post('register',form).expect(200)).body.status).toBe('Pending');
+  await post('register',form).expect(409);
+  const challenge=await post('login',{email,password}).expect(401);
+  expect(challenge.headers['set-cookie']).toBeUndefined();
+  await post('login',{email,password,code:'incorrecto'}).expect(401);
+  const logged=await post('login',{email,password,code:mail.get('login')}).expect(200);
+  await post('recovery',{email}).expect(200);
+  const reset={email,password:'Different-test-password',code:mail.get('reset')};
+  await post('reset',reset).expect(200);
+  await post('reset',reset).expect(400);
+  await request(app).get('/api/v1/auth/session').set('Cookie',logged.headers['set-cookie'][0].split(';')[0]).expect(401);
+ });
+ test('confirmación idempotente, rechazo, documento privado y cambio al cerrar ciclo',async()=>{
+  // Use a separate administrator account because password recovery revokes sessions.
+  const app=createIdentityApp({pool:h.runtimes.identity.pool,appBaseUrl:'http://localhost:4173',internalSecret:h.internalSecret,providerSecret:'test-provider'});
+  const path='/api/v1/auth/billing';
+  const call=(method,suffix)=>request(app)[method](path+suffix).set('Cookie',h.cookies.foreign);
+  const confirm=(id,status)=>request(app).post(path+'/confirmation').set('Authorization','Bearer test-provider').send({id,status,amountMinor:4900,currency:'PEN',reference:'test-'+id});
+  const first=(await call('post','/upgrade').expect(200)).body.id;
+  await confirm(first,'Rejected').expect(200);
+  expect((await call('get','').expect(200)).body.subscription.plan).toBe('Base');
+  const second=(await call('post','/upgrade').expect(200)).body.id;
+  await confirm(second,'Paid').expect(200);await confirm(second,'Paid').expect(200);
+  expect((await call('get','').expect(200)).body.history).toHaveLength(2);
+  await call('get','/documents/'+second).expect(200);
+  await call('get','/history.csv').expect(200);
+  await call('post','/downgrade').expect(200);
+  await call('get','/history.csv').expect(200);
+  await h.runtimes.identity.pool.execute('UPDATE subscriptions SET cycle_end=UTC_TIMESTAMP()-INTERVAL 1 SECOND WHERE tenant_id=?',[h.foreignTenantId]);
+  await call('get','/history.csv').expect(403);
+ });
+ test('ERP rota credenciales y aplica cuota por ventana sin cruzar organizaciones',async()=>{
+  const path='/api/v1/jewelry/erp',id=randomUUID();
+  const key=await h.api('jeweler','post',path+'/keys');
+  await h.api('carrier','post',path+'/keys',undefined,403);
+  const read=token=>request(h.gateway).get(path+'/lots/'+id).set('Authorization','Bearer '+token);
+  await read(key.token).expect(404);
+  await h.runtimes.jewelry.pool.execute('UPDATE erp_keys SET window_minute=FLOOR(UNIX_TIMESTAMP()/60),used=100 WHERE id=?',[key.id]);
+  expect(Number((await read(key.token).expect(429)).headers['retry-after'])).toBeGreaterThan(0);
+  const other=await h.api('foreign','post',path+'/keys');
+  await read(other.token).expect(404);
+  await h.runtimes.jewelry.pool.execute('UPDATE erp_keys SET window_minute=0 WHERE id=?',[key.id]);
+  await read(key.token).expect(404);
+  const rotated=await h.api('jeweler','post',path+'/keys/'+key.id+'/rotate');
+  await read(key.token).expect(401);await read(rotated.token).expect(404);
+  await h.api('jeweler','post',path+'/keys/'+key.id+'/rotate',undefined,409);
+ });
+ test('viaje con captura repetida, demora, desvío, reingreso y recepción',async()=>{
+  const lot=await h.api('supervisor','post','/api/v1/lots',{clientEventId:randomUUID(),mineralType:'Gold',weight:'10',weightUnit:'kg',originEvidence:{reference:'SRC',source:'Demo'}},201);
+  const id=lot.lotId,route='/api/v1/shipments/tracking/'+id;
+  const hand=await h.api('supervisor','post','/api/v1/lots/'+id+'/handovers',{operationId:randomUUID(),expectedVersion:1,recipientUserId:null},201);
+  const accepted=await h.api('carrier','post','/api/v1/custody/lots/'+id+'/accept',{operationId:randomUUID(),expectedVersion:hand.version,handoverId:hand.handoverId});
+  await h.api('carrier','post',route+'/route',{minutes:1,corridor});
+  const point=latitude=>({id:randomUUID(),latitude,longitude:.5,occurredAt:new Date().toISOString()});
+  const outside=point(.08);
+  await h.api('carrier','post',route+'/positions',outside);
+  await h.api('carrier','post',route+'/positions',outside);
+  const delayed=point(0);
+  await h.runtimes.logistics.pool.execute('UPDATE trip_routes SET deadline=UTC_TIMESTAMP(3)-INTERVAL 1 SECOND WHERE lot_id=?',[id]);
+  await detectDelays(h.runtimes.logistics.pool);
+  await h.api('plant','post','/api/v1/shipments/lots/'+id+'/receipt',{operationId:randomUUID(),expectedVersion:accepted.version});
+  await h.api('carrier','post',route+'/positions',delayed);
+  const result=await h.api('carrier','get',route+'/route');
+  expect(result.route.active).toBe(false);expect(result.points).toHaveLength(2);
+  expect(result.alerts.map(a=>a.type)).toEqual(['Deviation','Reentry','Delay']);
+ });
+});

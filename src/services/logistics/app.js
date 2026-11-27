@@ -1,3 +1,4 @@
+import {trackingRouter} from './tracking.js';
 import express from 'express';
 import { createRemoteAuth } from '../../shared/infrastructure/http/remoteIdentity.js';
 import { createSessionAuth } from '../../shared/infrastructure/http/sessionAuth.js';
@@ -39,6 +40,7 @@ export function createLogisticsApp({ pool, identityUrl, traceabilityUrl, interna
     try { res.json(await custody.read({ tenantId: req.identity.tenantId, lotId: uuid(req.params.lotId, 'lotId') }, req)); }
     catch (error) { failed(res, error); }
   });
+  app.use('/api/v1/shipments/tracking',trackingRouter({pool,traceabilityUrl,internalSecret,fetchImpl},authenticate));
   app.use('/api/v1/shipments', createShipmentRouter({ pool, identityUrl, traceabilityUrl, internalSecret, fetchImpl }, authenticate));
   return app;
 }
