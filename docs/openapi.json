@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "EventOre Platform Avance 4",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "description": "Ocho servicios con MySQL 8.4 independiente: Identity, Traceability, Logistics, Processing, Jewelry, Certification, Devices y Reporting. La cookie se obtiene mediante login. Los reportes de dispositivos usan Bearer propio. Los comandos conservan operationId y cuerpo ante fallos sin confirmación. Los ejemplos son datos de prueba, no credenciales."
   },
   "servers": [
@@ -23,6 +23,14 @@
         "name": "eventore_session"
       },
       "deviceBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      },
+      "provider": {
+        "type": "http",
+        "scheme": "bearer"
+      },
+      "erp": {
         "type": "http",
         "scheme": "bearer"
       }
@@ -181,6 +189,10 @@
                   "password": {
                     "type": "string",
                     "format": "password"
+                  },
+                  "code": {
+                    "type": "string",
+                    "description": "Segundo factor enviado al correo"
                   }
                 }
               }
@@ -195,7 +207,7 @@
             "description": "Invalid input"
           },
           "401": {
-            "description": "Session required"
+            "description": "Credenciales incorrectas o segundo factor requerido (MFA_REQUIRED)"
           },
           "403": {
             "description": "Origen o permiso no autorizado"
@@ -9567,6 +9579,539 @@
         },
         "operationId": "get_reporting_exports_id_download",
         "x-permission": "reporting.export",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Solicitar registro empresarial",
+        "responses": {
+          "200": {
+            "description": "Operación completada"
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "companyId",
+                  "companyName",
+                  "email",
+                  "password",
+                  "evidence"
+                ],
+                "properties": {
+                  "companyId": {
+                    "type": "string"
+                  },
+                  "companyName": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 128
+                  },
+                  "evidence": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/registration-status": {
+      "post": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Consultar el estado de una solicitud",
+        "responses": {
+          "200": {
+            "description": "Operación completada"
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "requestId",
+                  "email"
+                ],
+                "properties": {
+                  "requestId": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/recovery": {
+      "post": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Solicitar código de recuperación",
+        "responses": {
+          "200": {
+            "description": "Operación completada"
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/reset": {
+      "post": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Restablecer contraseña",
+        "responses": {
+          "200": {
+            "description": "Operación completada"
+          }
+        },
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password",
+                  "code"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 128
+                  },
+                  "code": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/billing": {
+      "get": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Consultar plan, beneficios y órdenes",
+        "responses": {
+          "200": {
+            "description": "Operación completada"
+          }
+        }
+      }
+    },
+    "/auth/billing/upgrade": {
+      "post": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Solicitar mejora al plan Pro",
+        "responses": {
+          "200": {
+            "description": "Operación completada"
+          }
+        }
+      }
+    },
+    "/auth/billing/downgrade": {
+      "post": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Programar el plan Base al cierre del ciclo",
+        "responses": {
+          "200": {
+            "description": "Operación completada"
+          }
+        }
+      }
+    },
+    "/auth/billing/confirmation": {
+      "post": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Confirmar pago desde el proveedor",
+        "responses": {
+          "200": {
+            "description": "Operación completada"
+          }
+        },
+        "security": [
+          {
+            "provider": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "status",
+                  "amountMinor",
+                  "currency",
+                  "reference"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "Paid",
+                      "Rejected"
+                    ]
+                  },
+                  "amountMinor": {
+                    "type": "integer"
+                  },
+                  "currency": {
+                    "type": "string"
+                  },
+                  "reference": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/billing/history.csv": {
+      "get": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Descargar historial CSV del plan Pro",
+        "responses": {
+          "200": {
+            "description": "Operación completada"
+          }
+        }
+      }
+    },
+    "/auth/billing/documents/{id}": {
+      "get": {
+        "tags": [
+          "identity"
+        ],
+        "summary": "Descargar el comprobante de pago",
+        "responses": {
+          "200": {
+            "description": "Operación completada"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/shipments/tracking/{lotId}/route": {
+      "post": {
+        "tags": [
+          "logistics"
+        ],
+        "summary": "Guardar corredor y duración del viaje",
+        "responses": {
+          "200": {
+            "description": "Operación completada"
+          }
+        },
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "corridor",
+                  "minutes"
+                ],
+                "properties": {
+                  "corridor": {
+                    "type": "array",
+                    "minItems": 2,
+                    "maxItems": 200,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "latitude",
+                        "longitude"
+                      ],
+                      "properties": {
+                        "latitude": {
+                          "type": "number",
+                          "minimum": -90,
+                          "maximum": 90
+                        },
+                        "longitude": {
+                          "type": "number",
+                          "minimum": -180,
+                          "maximum": 180
+                        }
+                      }
+                    }
+                  },
+                  "minutes": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 43200
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "logistics"
+        ],
+        "summary": "Consultar ruta, posiciones y alertas",
+        "responses": {
+          "200": {
+            "description": "Operación completada"
+          }
+        },
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/shipments/tracking/{lotId}/positions": {
+      "post": {
+        "tags": [
+          "logistics"
+        ],
+        "summary": "Sincronizar captura GPS",
+        "responses": {
+          "200": {
+            "description": "Operación completada"
+          }
+        },
+        "parameters": [
+          {
+            "name": "lotId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "latitude",
+                  "longitude",
+                  "occurredAt"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "latitude": {
+                    "type": "number",
+                    "minimum": -90,
+                    "maximum": 90
+                  },
+                  "longitude": {
+                    "type": "number",
+                    "minimum": -180,
+                    "maximum": 180
+                  },
+                  "occurredAt": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/jewelry/erp/keys": {
+      "post": {
+        "tags": [
+          "jewelry"
+        ],
+        "summary": "Generar una clave de integración",
+        "responses": {
+          "200": {
+            "description": "Operación completada"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "jewelry"
+        ],
+        "summary": "Consultar claves de la organización",
+        "responses": {
+          "200": {
+            "description": "Operación completada"
+          }
+        }
+      }
+    },
+    "/jewelry/erp/keys/{id}/rotate": {
+      "post": {
+        "tags": [
+          "jewelry"
+        ],
+        "summary": "Rotar una clave de integración",
+        "responses": {
+          "200": {
+            "description": "Operación completada"
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/jewelry/erp/lots/{id}": {
+      "get": {
+        "tags": [
+          "jewelry"
+        ],
+        "summary": "Consultar historial y análisis del lote recibido",
+        "responses": {
+          "200": {
+            "description": "Operación completada"
+          },
+          "429": {
+            "description": "Cuota de 100 solicitudes por minuto agotada",
+            "headers": {
+              "Retry-After": {
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "erp": []
+          }
+        ],
         "parameters": [
           {
             "name": "id",

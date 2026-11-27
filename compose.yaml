@@ -236,6 +236,11 @@ services:
       DATABASE_URL: mysql://identity:${IDENTITY_DB_PASSWORD}@identity-db:3306/identity
       INTERNAL_AUTH_SECRET: ${INTERNAL_AUTH_SECRET:?set INTERNAL_AUTH_SECRET}
       APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
+      EVENTORE_DEMO_PROVIDERS: ${EVENTORE_DEMO_PROVIDERS:-false}
+      BILLING_PROVIDER_SECRET: ${BILLING_PROVIDER_SECRET:-}
+      REQUIRE_MFA: ${REQUIRE_MFA:-false}
+      ACCOUNT_MAIL_URL: ${ACCOUNT_MAIL_URL:-}
+      ACCOUNT_MAIL_SECRET: ${ACCOUNT_MAIL_SECRET:-}
       PORT: 3001
     depends_on:
       identity-migrate: { condition: service_completed_successfully }
