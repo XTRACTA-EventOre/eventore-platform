@@ -5,6 +5,8 @@ migraciones MySQL 8.4, contratos API y pruebas. Requiere Node.js 24 y, para Comp
 Docker con Compose v2. El frontend Vue/Vite se desarrolla en
 [XTRACTA-EventOre/eventore](https://github.com/XTRACTA-EventOre/eventore).
 
+[Acceso corporativo, seguimiento GPS, integración ERP y suscripciones del Sprint 4](docs/sprint4.md)
+
 ## Arranque recomendado
 
 ```sh
